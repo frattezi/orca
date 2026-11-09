@@ -194,6 +194,8 @@ export abstract class OrcaRuntimeWithTerminalCreateDeduplication extends OrcaRun
       /** Run now is the user's act; a scheduled run is background and a stopped WSL distro holds it. */
       wslUserAct?: true
       surfaceOwner?: false
+      /** Account routing env merged over the agent's own env. */
+      accountEnv?: Record<string, string>
     },
     resolvedTarget?: { worktree: ResolvedWorktree; repo: Repo; folderWorkspace?: FolderWorkspace }
   ): Promise<RuntimeTerminalCreate> {
@@ -222,6 +224,7 @@ export abstract class OrcaRuntimeWithTerminalCreateDeduplication extends OrcaRun
         startupPromptDelivery: 'auto-submit',
         ...(opts.suppressStartupUpdatePrompt ? { suppressStartupUpdatePrompt: true } : {}),
         title: opts.title,
+        ...(opts.accountEnv ? { accountEnv: opts.accountEnv } : {}),
         ...(opts.wslUserAct ? { wslUserAct: true } : {}),
         ...ownerSurfacing(opts.surfaceOwner !== false)
       },

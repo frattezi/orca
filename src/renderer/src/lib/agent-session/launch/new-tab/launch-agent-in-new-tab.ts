@@ -211,7 +211,19 @@ function openAgentInNewTab(
     }
   }
 
-  const { startupPlan, pasteDraftAfterLaunch, submitPastedPrompt } = buildStartup()
+  const { startupPlan: plannedStartup, pasteDraftAfterLaunch, submitPastedPrompt } = buildStartup()
+  // Why the launch config too: a restored pane relaunches on its pinned account.
+  const startupPlan =
+    plannedStartup && args.accountEnv
+      ? {
+          ...plannedStartup,
+          env: { ...plannedStartup.env, ...args.accountEnv },
+          launchConfig: {
+            ...plannedStartup.launchConfig,
+            agentEnv: { ...plannedStartup.launchConfig.agentEnv, ...args.accountEnv }
+          }
+        }
+      : plannedStartup
   let promptDeliveryResult: Promise<{ delivered: boolean; failureNotified: boolean }> | undefined
   if (!startupPlan) {
     return refuseAgentTabLaunch(args, agentLaunchCheckSettingsMessage(), notify, notifyFailure)
@@ -222,6 +234,8 @@ function openAgentInNewTab(
   }
   if (
     pasteDraftAfterLaunch !== null &&
+    // Why: the host's launch builds its own env, so a pinned account would be dropped there.
+    !args.accountEnv &&
     newTabPromptLaunchesThroughHost({ promptDelivery, pastesPrompt: true, isRemote })
   ) {
     const launched = launchNewTabPromptThroughHost({

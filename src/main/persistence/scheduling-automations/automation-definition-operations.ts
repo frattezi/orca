@@ -16,6 +16,8 @@ import type {
 import type { AutomationRun } from '../../../shared/automations/history/automation-run'
 import type { PersistedState } from '../../../shared/persisted-state-types'
 import { normalizeAutomationPrecheck } from '../../../shared/automations/launch/automation-precheck'
+import { claudeAccountField, storeClaudeAccountId } from './automation-claude-account-write'
+import { findAutomationByCreationKey } from './automation-creation-key'
 import {
   assertAutomationExtraAgentArgs,
   storedExtraAgentArgs
@@ -69,13 +71,9 @@ export function createAutomation(
   input: AutomationCreateInput,
   options?: { destination?: AutomationDestination; resolvedRepo?: Repo }
 ): Automation {
-  if (input.creationKey) {
-    const existing = (operations.state.automations ?? []).find(
-      (automation) => automation.creationKey === input.creationKey
-    )
-    if (existing) {
-      return automationWithLaunchSetup(existing)
-    }
+  const existing = findAutomationByCreationKey(operations.state, input.creationKey)
+  if (existing) {
+    return automationWithLaunchSetup(existing)
   }
   const repo = findAutomationRepoForWrite(
     operations.state.repos,
@@ -121,6 +119,7 @@ export function createAutomation(
       : {}),
     ...(setup.agentArgs !== undefined ? { agentArgs: setup.agentArgs } : {}),
     ...(extraAgentArgs !== undefined ? { extraAgentArgs } : {}),
+    ...claudeAccountField(input),
     // Prefer authority-local contexts; client-assigned runtime IDs cannot identify this store's host.
     runContext: contexts.runContext ?? input.runContext ?? null,
     sourceContext: contexts.sourceContext ?? input.sourceContext ?? null,
@@ -276,6 +275,7 @@ export function updateAutomation(
     delete merged[key]
   }
   Object.assign(merged, automationCanonicalLaunchSetup(launchSetupUpdate))
+  storeClaudeAccountId(merged)
   assertAutomationExtraAgentArgs(merged)
   const previousPin = automationWorkspaceSshPin(operations.state, current.workspaceId)
   const workspaceSshPin = automationWorkspaceSshPin(operations.state, merged.workspaceId)

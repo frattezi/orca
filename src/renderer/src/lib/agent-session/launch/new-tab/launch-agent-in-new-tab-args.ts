@@ -31,6 +31,8 @@ export type LaunchAgentInNewTabArgs = LaunchAgentInNewTabRequest & {
   chatSessionOptions?: Readonly<Record<string, string>>
   /** On terminals, a flag `agentArgs` sets itself wins over the inherited saved choice. */
   sessionOptionsYieldToAgentArgs?: true
+  /** Pins the pane's Claude account (CLAUDE_PINNED_ACCOUNT_ENV); kept in its launch config across restores. */
+  accountEnv?: Record<string, string>
   initialCwd?: string | null
   /** Unsaved section root whose trust is prepared without changing placement. */
   trustWorktreeId?: string

@@ -4,6 +4,7 @@ import type { Repo } from '../../../../shared/repo-types'
 import { sanitizeRepoIcon } from '../../../../shared/repo-icon'
 import { normalizeRepoBadgeColor } from '../../../../shared/repo-badge-color'
 import { normalizeGhAccountBinding } from '../../../../shared/github/account-binding'
+import { normalizeRepoClaudeAccountUpdate } from '../../../../shared/repo-claude-account'
 import { normalizeJiraProjectReference } from '../../../../shared/jira/jira-project-reference'
 import { sanitizeAgentWorkspaceTrustDecision } from '../../../../shared/agent-launch/permissions/agent-workspace-trust-decision'
 import { findRepoForHost, repoMatchesHostIdentity } from './repo-host-identity'
@@ -62,6 +63,14 @@ export function sanitizeRepoUpdate(updates: RepoUpdate): RepoUpdate {
     sanitizeAgentWorkspaceTrustDecision(sanitized.agentWorkspaceTrust) === undefined
   ) {
     delete sanitized.agentWorkspaceTrust
+  }
+  if ('claudeAccountId' in sanitized) {
+    const claudeAccountId = normalizeRepoClaudeAccountUpdate(sanitized.claudeAccountId)
+    if (claudeAccountId === undefined) {
+      delete sanitized.claudeAccountId
+    } else {
+      sanitized.claudeAccountId = claudeAccountId
+    }
   }
   if ('ghAccount' in sanitized && sanitized.ghAccount != null) {
     const normalized = normalizeGhAccountBinding(sanitized.ghAccount)
@@ -190,6 +199,7 @@ export function createRepoUpdateActions(
                 sourceControlAi,
                 externalWorktreeDiscoverySuppressedAt,
                 ghAccount,
+                claudeAccountId,
                 externalWorktreeVisibility,
                 agentWorktreeVisibility,
                 ...updatesWithoutClearSentinels
@@ -230,6 +240,13 @@ export function createRepoUpdateActions(
                 mergedRepo = repoWithoutGhAccount
               } else if (ghAccount !== undefined) {
                 mergedRepo = { ...mergedRepo, ghAccount }
+              }
+              if (claudeAccountId === null) {
+                const { claudeAccountId: _claudeAccountId, ...repoWithoutClaudeAccount } =
+                  mergedRepo
+                mergedRepo = repoWithoutClaudeAccount
+              } else if (claudeAccountId !== undefined) {
+                mergedRepo = { ...mergedRepo, claudeAccountId }
               }
               return s.githubSourceCollections?.adopt(mergedRepo) ?? mergedRepo
             })

@@ -12,3 +12,15 @@ export const CLAUDE_PROFILE_MISSING_MESSAGE =
 
 export const CLAUDE_PROFILE_SETUP_FAILED_MESSAGE =
   'The selected Claude account could not be set up. Try again or choose another account.'
+
+/** Carries a pinned Claude account (automation or tab) to the spawn, which strips it before the pane starts. */
+export const CLAUDE_PINNED_ACCOUNT_ENV = 'ORCA_CLAUDE_PINNED_ACCOUNT_ID'
+
+export const CLAUDE_PINNED_ACCOUNT_MISSING_MESSAGE =
+  'The Claude account chosen for this agent was removed. Choose another account.'
+
+export const CLAUDE_PINNED_ACCOUNT_SIGNED_OUT_MESSAGE =
+  'The Claude account chosen for this agent is signed out. Sign in to it again in Settings.'
+
+export const CLAUDE_PINNED_ACCOUNT_UNSUPPORTED_MESSAGE =
+  'A chosen Claude account is only supported for agents that run on this computer.'

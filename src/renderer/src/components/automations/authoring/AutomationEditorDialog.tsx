@@ -52,6 +52,8 @@ export type AutomationDraft = {
   agentArgs?: string | null
   launchSetupPatch?: AutomationLaunchSetupPatch & { legacyOnly?: true }
   launchArgumentsInput?: { kind: 'legacy' | 'supplemental'; value: string }
+  /** Empty follows the selected Claude account. */
+  claudeAccountId: string
   projectId: string
   workspaceMode: AutomationWorkspaceMode
   workspaceId: string

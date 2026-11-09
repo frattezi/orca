@@ -9,6 +9,7 @@ import { getRepoExecutionHostId, normalizeExecutionHostId } from '../../../share
 import { normalizeRepoBadgeColor } from '../../../shared/repo-badge-color'
 import { sanitizeRepoIcon } from '../../../shared/repo-icon'
 import { normalizeGhAccountBinding } from '../../../shared/github/account-binding'
+import { normalizeRepoClaudeAccountUpdate } from '../../../shared/repo-claude-account'
 import type { GhAccountBinding } from '../../../shared/github/account-binding'
 import { normalizeRepoSourceControlAiOverrides } from '../../../shared/source-control/ai/settings/source-control-ai-repo-settings'
 import {
@@ -66,6 +67,7 @@ export function registerRepoUpdateHandler(mainWindow: BrowserWindow, store: Stor
             | Repo['externalWorktreeDiscoverySuppressedAt']
             | null
           ghAccount?: GhAccountBinding | null
+          claudeAccountId?: string | null
         }
       }
     ): Promise<Repo | null> => {
@@ -103,6 +105,14 @@ export function registerRepoUpdateHandler(mainWindow: BrowserWindow, store: Stor
           } else {
             updates.ghAccount = normalized
           }
+        }
+      }
+      if ('claudeAccountId' in updates) {
+        const claudeAccountId = normalizeRepoClaudeAccountUpdate(updates.claudeAccountId)
+        if (claudeAccountId === undefined) {
+          delete updates.claudeAccountId
+        } else {
+          updates.claudeAccountId = claudeAccountId
         }
       }
       // Worktree materialization trims each path; reject malformed arrays at the IPC boundary.

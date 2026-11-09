@@ -190,6 +190,7 @@ export async function saveOrcaAutomation(
     ...(edited('prompt') ? { prompt: draft.prompt } : {}),
     ...(edited('precheckCommand') || edited('precheckTimeoutSeconds') ? { precheck } : {}),
     ...(edited('agentId') ? { agentId: draft.agentId } : {}),
+    ...(edited('claudeAccountId') ? { claudeAccountId: draft.claudeAccountId } : {}),
     ...(!currentAutomation ||
     draft.launchSetupPatch ||
     edited('surface') ||
@@ -224,6 +225,7 @@ export async function saveOrcaAutomation(
     precheck: currentAutomation ? currentAutomation.precheck : precheck,
     agentId: currentAutomation ? currentAutomation.agentId : draft.agentId,
     ...launchSetup,
+    claudeAccountId: (currentAutomation ?? draft).claudeAccountId || undefined,
     runContext: currentAutomation ? currentAutomation.runContext : runContext,
     projectId: currentAutomation ? currentAutomation.projectId : draft.projectId,
     workspaceMode: currentAutomation ? currentAutomation.workspaceMode : draft.workspaceMode,

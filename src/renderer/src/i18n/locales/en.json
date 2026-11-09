@@ -4633,6 +4633,9 @@
             "fdd29eb669": "Pin Tab",
             "8e9d603a09": "Unpin Tab"
           },
+          "claudeAccountLaunch": {
+            "trigger": "Claude CLI with account"
+          },
           "QuickLaunchButton": {
             "348a04c1ad": "Agent settings…",
             "ec2adf093e": "Launch {{value0}} in a new terminal",
@@ -13957,6 +13960,15 @@
         },
         "BrowserUseEnableSwitch": {
           "ce4d6f80d8": "Enable agent browser use"
+        },
+        "RepositoryClaudeAccountSection": {
+          "title": "Claude Account",
+          "description": "Start Claude on a specific account for this project.",
+          "longDescription": "Claude sessions and automations Orca starts in this project use this account unless they choose another. Changing the account selected in Settings leaves them on it.",
+          "selectLabel": "Account",
+          "followSelection": "Selected account",
+          "removed": "Removed account",
+          "removedHelper": "This account was removed, so Claude starts on the selected account."
         }
       },
       "right": {
@@ -18632,6 +18644,15 @@
         },
         "launchSettings": {
           "needsFreshSession": "Agent launch settings require a fresh session for every run."
+
+        },
+        "claudeAccount": {
+          "label": "Claude account",
+          "followSelection": "Project or selected account",
+          "removed": "Removed account",
+          "unsupported": "Choosing an account is only supported for automations that run on this computer.",
+          "removedHelper": "Runs fail until you choose another account.",
+          "helper": "Runs use this account whatever is selected in Settings."
         }
       },
       "agent": {

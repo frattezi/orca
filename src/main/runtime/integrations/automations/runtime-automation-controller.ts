@@ -113,6 +113,7 @@ export class RuntimeAutomationController {
         agentId: input.agentId,
         extraAgentArgs: input.extraAgentArgs,
         launchSetupPatch: input.launchSetupPatch,
+        claudeAccountId: input.claudeAccountId,
         runContext: input.runContext,
         sourceContext: input.sourceContext,
         projectId: target.projectId,

@@ -13,6 +13,7 @@ import {
   CLAUDE_USER_CONFIG_DIR_ENV
 } from '../../shared/claude-profile-routing'
 import { claudeProfileMissing } from './claude-profile-launch-errors'
+import { preparePinnedClaudeLaunch } from './claude-pinned-launch'
 import type { GlobalSettings } from '../../shared/global-settings-types'
 import type { ClaudeManagedAccount } from '../../shared/managed-account-types'
 import { probeRecentClaudeCliVersion } from '../claude/claude-hook-event-versions'
@@ -59,7 +60,7 @@ export class ClaudeProfileRouter {
   readonly pointerPath: string
   private readonly setups = new Map<string, Promise<ClaudeProfileSetupReport>>()
   private env: NodeJS.ProcessEnv
-  private readonly envReady: Promise<unknown>
+  readonly envReady: Promise<unknown>
   private envResolved: boolean
   constructor(
     private readonly args: {
@@ -103,6 +104,11 @@ export class ClaudeProfileRouter {
     return profile && !this.coveredBySystemDefault(profile.accountId) ? profile : null
   }
 
+  hasAccount(accountId: string): boolean {
+    return Boolean(findClaudeAccount(this.args.getSettings(), accountId))
+  }
+
+  /** The login an account's own folder holds; null until it signs in there. */
   accountLogin(accountId: string): ClaudeFolderLogin | null {
     return readClaudeFolderLogin(claudeStateFile(this.accountHome(accountId), this.userHome))
   }
@@ -181,15 +187,26 @@ export class ClaudeProfileRouter {
     // Login changes since publication can change the route.
     this.writePointer()
     const profile = this.routedProfile()
-    if (!profile) {
-      return this.preparation()
+    if (profile) {
+      await this.readyForLaunch(profile)
     }
-    await prepareClaudeProfileForLaunch(
-      profile,
-      (value) => this.setUp(value),
-      this.args.refreshWaitMs
-    )
     return this.preparation()
+  }
+
+  preparePinnedLaunch(accountId: string): Promise<ClaudeRuntimeAuthPreparation> {
+    return preparePinnedClaudeLaunch(this, accountId)
+  }
+
+  /** The pointer file a pinned launch's `claude` follows; empty for System default. */
+  writePinnedPointer(accountId: string, home: string | null): string {
+    const path = join(this.args.dataRoot, 'claude-pinned-pointers', accountId)
+    mkdirSync(dirname(path), { recursive: true, mode: 0o700 })
+    writeFileAtomically(path, home ?? '', { mode: 0o600 })
+    return path
+  }
+
+  readyForLaunch(profile: ClaudeProfileDescriptor): Promise<void> {
+    return prepareClaudeProfileForLaunch(profile, (value) => this.setUp(value), this.args.refreshWaitMs)
   }
 
   accountHome(accountId: string): string {
@@ -220,7 +237,7 @@ export class ClaudeProfileRouter {
     return readUserClaudeConfigDir(this.env)
   }
 
-  private describe(accountId: string): ClaudeProfileDescriptor {
+  describe(accountId: string): ClaudeProfileDescriptor {
     return describeClaudeProfile(this.args.dataRoot, accountId, {
       executionHostId: 'local',
       runtime: 'host'
@@ -327,7 +344,6 @@ export class ClaudeProfileRouter {
     return this.routedProfile() !== null
   }
 
-  /** Read usage from the same login the account would launch with. */
   accountUsagePreparation(accountId: string): ClaudeRuntimeAuthPreparation {
     return claudeAccountUsagePreparation(this, accountId)
   }

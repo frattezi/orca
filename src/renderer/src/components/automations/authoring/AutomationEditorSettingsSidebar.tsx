@@ -18,6 +18,7 @@ import { AutomationSessionField } from './AutomationSessionField'
 import { AutomationSetupDecisionField } from './AutomationSetupDecisionField'
 import { AutomationWorkspaceField } from './AutomationWorkspaceField'
 import { AutomationDestinationField } from './AutomationDestinationField'
+import { AutomationClaudeAccountField } from './AutomationClaudeAccountField'
 import type { AutomationCreateDestinationControl } from './use-automation-create-destination'
 import type { AutomationDraft } from './AutomationEditorDialog'
 
@@ -43,6 +44,21 @@ type AutomationEditorSettingsSidebarProps = {
   allowAddProject?: boolean
   onDraftChange: (updater: (current: AutomationDraft) => AutomationDraft) => void
   onSetupDecisionTouched: () => void
+}
+
+/** Best effort: a pinned run on another host fails at spawn rather than switch accounts. */
+function automationRunsOnThisComputer(
+  repo: Repo | undefined,
+  destination: AutomationCreateDestinationControl | undefined
+): boolean {
+  if (repo?.connectionId) {
+    return false
+  }
+  const resolution = destination?.resolution
+  return (
+    resolution?.status !== 'ready' ||
+    (resolution.authority.kind === 'desktop' && resolution.entry.kind === 'self')
+  )
 }
 
 export function AutomationEditorSettingsSidebar({
@@ -93,6 +109,16 @@ export function AutomationEditorSettingsSidebar({
               onDraftChange={onDraftChange}
             />
           </Field>
+          {draft.agentId === 'claude' ? (
+            <AutomationClaudeAccountField
+              draft={draft}
+              runsOnThisComputer={automationRunsOnThisComputer(
+                repoMap.get(draft.projectId),
+                destination
+              )}
+              onDraftChange={onDraftChange}
+            />
+          ) : null}
         </div>
         {destination ? (
           <div className="mb-4">

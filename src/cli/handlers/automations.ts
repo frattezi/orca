@@ -50,6 +50,7 @@ import {
   getSourceContextFlag,
   getWorkspaceModeFlag
 } from './automation-handler-flags'
+import { getClaudeAccountFlag } from './claude-account-flag'
 import { getExtraAgentArgsFlag } from './automation-extra-agent-args-flag'
 import { assertAutomationFieldsSupported } from './automation-host-support'
 import { assertAutomationSetupMode, getAutomationSetupFlag } from './automation-setup-flag'
@@ -186,6 +187,7 @@ export const AUTOMATION_HANDLERS: Record<string, CommandHandler> = {
       agentId: getProviderFlag(flags),
       extraAgentArgs: getExtraAgentArgsFlag(flags),
       ...(setupDecision !== undefined ? { setupDecision } : {}),
+      claudeAccountId: getClaudeAccountFlag(flags),
       ...(target.runContext ? { runContext: target.runContext } : {}),
       ...(sourceContext !== undefined ? { sourceContext } : {}),
       repo: target.repo,
@@ -220,6 +222,7 @@ export const AUTOMATION_HANDLERS: Record<string, CommandHandler> = {
       agentId: getOptionalProviderFlag(flags),
       extraAgentArgs: getExtraAgentArgsFlag(flags),
       ...(setupDecision !== undefined ? { setupDecision } : {}),
+      claudeAccountId: getClaudeAccountFlag(flags),
       ...(target.runContext ? { runContext: target.runContext } : {}),
       ...(sourceContext !== undefined ? { sourceContext } : {}),
       repo: target.repo,

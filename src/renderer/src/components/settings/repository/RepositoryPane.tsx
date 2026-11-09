@@ -29,6 +29,7 @@ import { RepositoryAgentTrustSection } from './RepositoryAgentTrustSection'
 import { RepositoryGitHubAccountSection } from './source-control/RepositoryGitHubAccountSection'
 import { useTranslate } from '@/i18n/use-translate'
 import { RepositoryWindowsRuntimeSection } from './runtime/RepositoryWindowsRuntimeSection'
+import { RepositoryClaudeAccountSection } from './RepositoryClaudeAccountSection'
 import { matchesRepositoryIdentitySearch } from './identity/repository-identity-search'
 import { RepositoryWorktreeDefaultsSection } from './worktrees/RepositoryWorktreeDefaultsSection'
 import { RepositoryJiraProjectSection } from './RepositoryJiraProjectSection'
@@ -41,11 +42,12 @@ import {
 
 type RepositoryPaneRepoUpdate = Omit<
   Partial<Repo>,
-  'sourceControlAi' | 'externalWorktreeVisibility' | 'ghAccount'
+  'sourceControlAi' | 'externalWorktreeVisibility' | 'ghAccount' | 'claudeAccountId'
 > & {
   sourceControlAi?: Repo['sourceControlAi'] | null
   externalWorktreeVisibility?: Repo['externalWorktreeVisibility'] | null
   ghAccount?: GhAccountBinding | null
+  claudeAccountId?: string | null
 }
 
 const EMPTY_WSL_DISTROS: string[] = []
@@ -330,6 +332,12 @@ export function RepositoryPane({
             />
 
             <RepositoryGitHubAccountSection
+              repo={repo}
+              updateRepo={updateSelectedRepo}
+              forceVisible={forceFullPaneForRepoMatch}
+            />
+
+            <RepositoryClaudeAccountSection
               repo={repo}
               updateRepo={updateSelectedRepo}
               forceVisible={forceFullPaneForRepoMatch}

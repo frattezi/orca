@@ -4,8 +4,10 @@ import { formatRepoList, formatRepoRefs, formatRepoShow, printResult } from '../
 import {
   getOptionalPositiveIntegerFlag,
   getOptionalRepoKind,
+  getOptionalStringFlag,
   getRequiredStringFlag
 } from '../flags'
+import { getClaudeAccountFlag } from './claude-account-flag'
 import { resolveRepoPathArgument } from '../repo-path-arguments'
 import { RuntimeClientError } from '../runtime/types'
 import { attachCliErrorData } from './worktree-setup-decision-recovery'
@@ -48,16 +50,35 @@ export const REPO_HANDLERS: Record<string, CommandHandler> = {
   },
   'repo set': async ({ flags, client, json }) => {
     const repo = getRequiredStringFlag(flags, 'repo')
-    const visibility = getRequiredStringFlag(flags, 'external-worktree-visibility')
-    if (visibility !== 'show' && visibility !== 'hide' && visibility !== 'inherit') {
+    const visibility = getOptionalStringFlag(flags, 'external-worktree-visibility')
+    const claudeAccountId = getClaudeAccountFlag(flags)
+    if (visibility === undefined && claudeAccountId === undefined) {
+      throw new RuntimeClientError(
+        'invalid_argument',
+        'Missing required --external-worktree-visibility or --claude-account'
+      )
+    }
+    if (
+      visibility !== undefined &&
+      visibility !== 'show' &&
+      visibility !== 'hide' &&
+      visibility !== 'inherit'
+    ) {
       throw new RuntimeClientError(
         'invalid_argument',
         '--external-worktree-visibility must be show, hide, or inherit.'
       )
     }
+    const updates: Record<string, unknown> = {}
+    if (visibility !== undefined) {
+      updates.externalWorktreeVisibility = visibility === 'inherit' ? null : visibility
+    }
+    if (claudeAccountId !== undefined) {
+      updates.claudeAccountId = claudeAccountId === '' ? null : claudeAccountId
+    }
     const result = await client.call<{ repo: Record<string, unknown> }>('repo.update', {
       repo,
-      updates: { externalWorktreeVisibility: visibility === 'inherit' ? null : visibility }
+      updates
     })
     printResult(result, json, formatRepoShow)
   },
