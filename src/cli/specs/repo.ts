@@ -27,15 +27,21 @@ export const REPO_COMMAND_SPECS: CommandSpec[] = [
   },
   {
     path: ['repo', 'set'],
-    summary: 'Set whether non-Orca worktrees are shown for a repo',
+    summary: 'Set repo settings: non-Orca worktree visibility and the Claude account',
     usage:
-      'orca repo set --repo <selector> --external-worktree-visibility show|hide|inherit [--json]',
-    allowedFlags: [...GLOBAL_FLAGS, 'repo', 'external-worktree-visibility'],
+      'orca repo set --repo <selector> [--external-worktree-visibility show|hide|inherit] [--claude-account <id>] [--json]',
+    allowedFlags: [...GLOBAL_FLAGS, 'repo', 'external-worktree-visibility', 'claude-account'],
     notes: [
+      'Pass at least one of --external-worktree-visibility or --claude-account.',
       'show and hide override the global non-Orca worktree visibility default for this repo; inherit clears the override.',
-      'Per-worktree visibility rules still apply.'
+      'Per-worktree visibility rules still apply.',
+      'Use --claude-account <id> (an id from `orca account list`) to launch Claude in this repo with that account whatever is selected; applies to Claude launches on this computer only. --claude-account= follows the selected account again.'
     ],
-    examples: ['orca repo set --repo path:/path/to/repo --external-worktree-visibility show --json']
+    examples: [
+      'orca repo set --repo path:/path/to/repo --external-worktree-visibility show --json',
+      'orca repo set --repo path:/path/to/repo --claude-account <id> --json',
+      'orca repo set --repo path:/path/to/repo --claude-account= --json'
+    ]
   },
   {
     path: ['repo', 'set-base-ref'],

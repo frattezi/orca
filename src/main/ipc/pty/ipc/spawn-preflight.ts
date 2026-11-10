@@ -1,4 +1,7 @@
-import { resolveClaudeSpawnAuth } from '../../../claude-accounts/claude-spawn-auth'
+import {
+  projectClaudeAccountIdForWorktree,
+  resolveClaudeSpawnAuth
+} from '../../../claude-accounts/claude-spawn-auth'
 import { mintPtySessionId } from '../../../daemon/sessions/pty-session-id'
 import { LocalPtyProvider } from '../../../providers/local-pty/local-pty-provider'
 import {
@@ -120,7 +123,9 @@ export async function preparePtyIpcSpawnPreflight(ctx: PtyIpcSpawnState): Promis
     env: args.env,
     target: ctx.codexSelectionTarget,
     isClaudeLaunch: ctx.isClaudeLaunch,
-    prepareClaudeAuth: ctx.deps.prepareClaudeAuth
+    prepareClaudeAuth: ctx.deps.prepareClaudeAuth,
+    projectClaudeAccountId: projectClaudeAccountIdForWorktree(ctx.deps.store, args.worktreeId),
+    freshSpawn: !ctx.preAdoptedStablePane
   })
   args.env = claudeSpawn.env
   ctx.claudeAuth = claudeSpawn.claudeAuth ? await claudeSpawn.claudeAuth : null

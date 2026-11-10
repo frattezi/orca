@@ -125,7 +125,7 @@ function* localClaudePanes(
         if (
           entry?.agentType !== 'claude' ||
           entry.structuredHostOwned ||
-          paneKeepsClaudeAccount(state, entry)
+          paneKeepsClaudeAccount(state, worktreeId, entry)
         ) {
           continue
         }

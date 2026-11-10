@@ -13943,6 +13943,15 @@
         "RepositorySourceControlAiSection": {
           "112f3b934f": "Source control AI"
         },
+        "RepositoryClaudeAccountSection": {
+          "title": "Claude Account",
+          "description": "Start Claude on a specific account for this project.",
+          "longDescription": "Claude sessions and automations Orca starts in this project use this account unless they choose another. Changing the account selected in Settings leaves them on it.",
+          "selectLabel": "Account",
+          "followSelection": "Selected account",
+          "removed": "Removed account",
+          "removedHelper": "This account was removed, so Claude starts on the selected account."
+        },
         "keep": {
           "local": {
             "main": {
@@ -18638,7 +18647,7 @@
         },
         "claudeAccount": {
           "label": "Claude account",
-          "followSelection": "Selected account",
+          "followSelection": "Project or selected account",
           "removed": "Removed account",
           "unsupported": "Choosing an account is only supported for automations that run on this computer.",
           "removedHelper": "Runs fail until you choose another account.",
