@@ -1,5 +1,4 @@
-import { spawnSync } from 'node:child_process'
-import { chmodSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, describe, expect, it, vi } from 'vitest'
@@ -10,11 +9,12 @@ import {
   CLAUDE_PINNED_ACCOUNT_SIGNED_OUT_MESSAGE,
   CLAUDE_PINNED_ACCOUNT_UNSUPPORTED_MESSAGE
 } from '../../shared/claude-profile-routing'
-import { getPosixClaudeShellFunction } from '../../shared/claude-shell-function'
 import { claudeProfileMarkerPath, type ClaudeProfileDescriptor } from './claude-profile-paths'
 import { ClaudeProfileRouter, type ClaudeProfileRouterSettings } from './claude-profile-router'
 import { installClaudeProfileRouter } from './claude-profile-installed-router'
 import { resolveClaudeSpawnAuth } from './claude-spawn-auth'
+import { preparePinnedClaudeLaunch } from './claude-pinned-launch'
+import { claudeShellProbe } from './claude-shell-probe.test-fixture'
 
 vi.mock('../startup/login-shell-environment', () => ({
   resolveLoginShellEnvironment: () => Promise.resolve({})
@@ -82,22 +82,8 @@ function signIn(stateDir: string, email: string): void {
   )
 }
 
-/** Runs the POSIX claude function under bash; prints the folder Claude would use. */
-function claudeShellProbe(root: string): (env: Record<string, string>) => string {
-  const bin = join(root, 'bin')
-  mkdirSync(bin)
-  writeFileSync(join(bin, 'claude'), '#!/bin/sh\nprintf "%s" "${CLAUDE_CONFIG_DIR-unset}"\n')
-  chmodSync(join(bin, 'claude'), 0o700)
-  return (env) =>
-    spawnSync(
-      '/bin/bash',
-      ['--norc', '--noprofile', '-c', `${getPosixClaudeShellFunction()}\nclaude`],
-      {
-        env: { ...env, PATH: `${bin}:/usr/bin:/bin` },
-        encoding: 'utf8'
-      }
-    ).stdout
-}
+// The shell probes run the POSIX claude function under Bash.
+const posixShell = process.platform !== 'win32'
 
 describe('pinned Claude account launches', () => {
   it("runs the pinned account's folder while another account is selected", async () => {
@@ -118,7 +104,9 @@ describe('pinned Claude account launches', () => {
     expect(paneEnv.CLAUDE_CONFIG_DIR).toBe(f.home('b'))
     // The selection's own pointer still names the selected account; the pane reads its own.
     expect(readFileSync(f.router.pointerPath, 'utf8')).toBe(f.home('a'))
-    expect(claudeShellProbe(f.root)(paneEnv)).toBe(f.home('b'))
+    if (posixShell) {
+      expect(claudeShellProbe(f.root)(paneEnv)).toBe(f.home('b'))
+    }
   })
 
   it("pins to System default's login when that covers the account", async () => {
@@ -139,16 +127,18 @@ describe('pinned Claude account launches', () => {
     const paneEnv = { ...env, ...claudeAuth?.envPatch }
     // The selected account's injected folder is gone, so Claude starts on System default.
     expect(paneEnv).not.toHaveProperty('CLAUDE_CONFIG_DIR')
-    expect(claudeShellProbe(f.root)(paneEnv)).toBe('unset')
+    if (posixShell) {
+      expect(claudeShellProbe(f.root)(paneEnv)).toBe('unset')
+    }
   })
 
   it('fails a removed or signed-out account instead of running another one', async () => {
     const f = fixture()
-    await expect(f.router.preparePinnedLaunch('gone')).rejects.toThrow(
+    await expect(preparePinnedClaudeLaunch(f.router, 'gone')).rejects.toThrow(
       CLAUDE_PINNED_ACCOUNT_MISSING_MESSAGE
     )
     signIn(f.userHome, 'a@example.test')
-    await expect(f.router.preparePinnedLaunch('b')).rejects.toThrow(
+    await expect(preparePinnedClaudeLaunch(f.router, 'b')).rejects.toThrow(
       CLAUDE_PINNED_ACCOUNT_SIGNED_OUT_MESSAGE
     )
     expect(f.setup.calls).toBe(0)
@@ -182,5 +172,27 @@ describe('pinned Claude account launches', () => {
       resolveClaudeSpawnAuth({ env: undefined, target: { runtime: 'host' }, isClaudeLaunch: false })
         .claudeAuth
     ).toBeNull()
+  })
+
+  it('strips a pin from a spawn that starts no Claude without preparing or refusing it', () => {
+    const f = fixture()
+    const hasAccount = vi.spyOn(f.router, 'hasAccount')
+    for (const router of [undefined, f.router]) {
+      installClaudeProfileRouter(router)
+      for (const target of [
+        { runtime: 'host' as const },
+        { runtime: 'wsl' as const, wslDistro: 'Ubuntu' }
+      ]) {
+        const { env, claudeAuth } = resolveClaudeSpawnAuth({
+          env: { [CLAUDE_PINNED_ACCOUNT_ENV]: 'b', KEEP: '1' },
+          target,
+          isClaudeLaunch: false
+        })
+        expect(env).not.toHaveProperty(CLAUDE_PINNED_ACCOUNT_ENV)
+        expect(env).toMatchObject({ KEEP: '1' })
+        expect(claudeAuth).toBeNull()
+      }
+    }
+    expect(hasAccount).not.toHaveBeenCalled()
   })
 })

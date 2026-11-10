@@ -9,6 +9,7 @@ import {
   withClaudeProfileTerminalEnv
 } from './claude-profile-installed-router'
 import type { ClaudeRuntimeAuthPreparation } from './runtime-auth/runtime-auth-types'
+import { preparePinnedClaudeLaunch } from './claude-pinned-launch'
 import type { ClaudeAccountSelectionTarget } from './runtime-selection'
 
 /**
@@ -34,6 +35,10 @@ export function resolveClaudeSpawnAuth<Env extends Record<string, string> | unde
         args.isClaudeLaunch && args.prepareClaudeAuth ? args.prepareClaudeAuth(args.target) : null
     }
   }
+  // Why: a re-adopted pane starts no Claude, so its stale pin must neither prepare nor refuse.
+  if (!args.isClaudeLaunch) {
+    return { env: withClaudeProfileTerminalEnv(rest, args.target), claudeAuth: null }
+  }
   // Why a refusal: only this host's router owns its account folders; elsewhere the run would
   // silently use another account.
   const router = getClaudeProfileRouter()
@@ -49,5 +54,5 @@ export function resolveClaudeSpawnAuth<Env extends Record<string, string> | unde
     delete env.CLAUDE_CONFIG_DIR
     delete env[CLAUDE_INJECTED_CONFIG_DIR_ENV]
   }
-  return { env, claudeAuth: router.preparePinnedLaunch(accountId) }
+  return { env, claudeAuth: preparePinnedClaudeLaunch(router, accountId) }
 }

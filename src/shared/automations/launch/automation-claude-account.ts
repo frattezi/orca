@@ -10,6 +10,19 @@ export function storedClaudeAccountId(value: string | undefined): string | undef
   return trimmed ? trimmed : undefined
 }
 
+export const CLAUDE_ACCOUNT_HOST_UPDATE_REQUIRED =
+  'Update Orca on this host to choose a Claude account for automations.'
+
+/** A create that pins an account, or an edit that pins or clears one, needs a host that keeps the field. */
+export function writesClaudeAccount(
+  claudeAccountId: string | undefined,
+  write: 'create' | 'update'
+): boolean {
+  return write === 'update'
+    ? claudeAccountId !== undefined
+    : storedClaudeAccountId(claudeAccountId) !== undefined
+}
+
 /**
  * Spawn env pinning a Claude automation's run to its saved account; undefined follows the selection.
  * Throws for an SSH target: its spawn never reaches this host's account folders.

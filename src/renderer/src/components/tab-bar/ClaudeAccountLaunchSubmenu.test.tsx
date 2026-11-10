@@ -12,14 +12,19 @@ const { fetchProviderAccountsSnapshot, runsHere } = vi.hoisted(() => ({
     claude: {
       accounts: [
         { id: 'a', email: 'a@example.test', managedAuthRuntime: 'host' },
+        { id: 'out', email: 'out@example.test', managedAuthRuntime: 'host', needsSignIn: true },
         { id: 'w', email: 'wsl@example.test', managedAuthRuntime: 'wsl' }
       ]
     }
   }))
 }))
-vi.mock('@/runtime/provider-accounts/observations/runtime-provider-accounts-client', () => ({
-  fetchProviderAccountsSnapshot
-}))
+vi.mock(
+  '@/runtime/provider-accounts/observations/runtime-provider-accounts-client',
+  async (importOriginal) => ({
+    ...(await importOriginal<object>()),
+    fetchProviderAccountsSnapshot
+  })
+)
 vi.mock('@/lib/claude-account-pin-availability', () => ({
   canPinClaudeAccountForWorktree: () => runsHere.value
 }))
@@ -58,10 +63,11 @@ beforeEach(() => {
 afterEach(cleanup)
 
 describe('ClaudeAccountLaunchSubmenu', () => {
-  it("opens Claude's CLI, not its chat, on the picked host account", async () => {
+  it("opens Claude's CLI, not its chat, on the picked signed-in host account", async () => {
     renderSubmenu([{ kind: 'chat', agent: 'claude', executionHostId: 'local' }])
     fireEvent.click(await screen.findByText('a@example.test'))
     expect(screen.queryByText('wsl@example.test')).toBeNull()
+    expect(screen.queryByText('out@example.test')).toBeNull()
     expect(runLaunch).toHaveBeenCalledWith(
       { kind: 'cli', agent: 'claude', executionHostId: 'local' },
       'a'

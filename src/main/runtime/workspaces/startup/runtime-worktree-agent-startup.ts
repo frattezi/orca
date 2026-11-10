@@ -8,6 +8,7 @@ import type { TuiAgent } from '../../../../shared/agent-launch/catalog/tui-agent
 import type { WorktreeStartupLaunch } from '../../../../shared/worktree/launch-types'
 import { repoIsRemote } from '../../../../shared/agent-launch/startup/agent-launch-remote'
 import { getRepoSshConnectionId } from '../../../../shared/execution-host'
+import { withClaudePinInLaunchConfig } from '../../../../shared/claude-profile-routing'
 import { isTuiAgent } from '../../../../shared/agent-launch/catalog/tui-agent-config'
 import {
   isTuiAgentEnabled,
@@ -298,7 +299,18 @@ export async function resolveWorktreeCreateAgentStartup(
   return args.startupAccountEnv
     ? {
         ...built,
-        startup: { ...built.startup, env: { ...built.startup.env, ...args.startupAccountEnv } }
+        startup: {
+          ...built.startup,
+          env: { ...built.startup.env, ...args.startupAccountEnv },
+          ...(built.startup.launchConfig
+            ? {
+                launchConfig: withClaudePinInLaunchConfig(
+                  built.startup.launchConfig,
+                  args.startupAccountEnv
+                )
+              }
+            : {})
+        }
       }
     : built
 }

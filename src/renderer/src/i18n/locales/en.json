@@ -18642,7 +18642,8 @@
           "removed": "Removed account",
           "unsupported": "Choosing an account is only supported for automations that run on this computer.",
           "removedHelper": "Runs fail until you choose another account.",
-          "helper": "Runs use this account whatever is selected in Settings."
+          "helper": "Runs use this account whatever is selected in Settings.",
+          "hostUpdateRequired": "Update Orca on this host to choose a Claude account for automations."
         }
       },
       "agent": {

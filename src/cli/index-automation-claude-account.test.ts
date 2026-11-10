@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 
 const {
   callMock,
@@ -41,8 +41,25 @@ vi.mock('child_process', async () => {
 })
 
 import { main } from './index'
-import { okFixture, queueFixtures } from './test-fixtures'
+import { okFixture } from './test-fixtures'
 import { useWorktreeAwarenessEnvironment } from './index-test-harness'
+import { AUTOMATION_CLAUDE_ACCOUNT_RUNTIME_CAPABILITY } from '../shared/automations/automation-runtime-capabilities'
+
+const ORIGINAL_EXIT_CODE = process.exitCode
+
+/** Answers by method so the status probe is optional: a write that skips it still resolves. */
+function hostAnswers(capabilities: string[]): void {
+  callMock.mockImplementation(async (method: string) => {
+    if (method === 'status.get') {
+      return okFixture('req_status', { capabilities })
+    }
+    return okFixture(`req_${method}`, { automation: { id: 'auto-1', name: 'Daily review' } })
+  })
+}
+
+function calledMethods(): unknown[] {
+  return callMock.mock.calls.map(([method]) => method)
+}
 
 describe('orca cli automation Claude account', () => {
   useWorktreeAwarenessEnvironment({
@@ -54,6 +71,10 @@ describe('orca cli automation Claude account', () => {
     spawnMock
   })
 
+  afterEach(() => {
+    process.exitCode = ORIGINAL_EXIT_CODE
+  })
+
   it('sends the account id, and an explicit empty value to follow the selection again', async () => {
     vi.spyOn(console, 'log').mockImplementation(() => {})
     for (const [flag, claudeAccountId] of [
@@ -61,18 +82,45 @@ describe('orca cli automation Claude account', () => {
       ['--claude-account=', '']
     ]) {
       callMock.mockReset()
-      queueFixtures(
-        callMock,
-        okFixture('req_edit_owner', { automation: { id: 'auto-1', name: 'Daily review' } }),
-        okFixture('req_edit', { automation: { id: 'auto-1', name: 'Daily review' } })
-      )
+      hostAnswers([AUTOMATION_CLAUDE_ACCOUNT_RUNTIME_CAPABILITY])
 
       await main(['automations', 'edit', 'auto-1', flag, '--json'], '/tmp/repo')
 
-      expect(callMock).toHaveBeenNthCalledWith(2, 'automation.update', {
+      expect(callMock).toHaveBeenCalledWith('automation.update', {
         id: 'auto-1',
         updates: expect.objectContaining({ claudeAccountId })
       })
     }
+  })
+
+  it('refuses to pin or clear the account on a host whose Orca predates the field', async () => {
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
+    const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+    for (const flag of ['--claude-account=acct-b', '--claude-account=']) {
+      callMock.mockReset()
+      process.exitCode = ORIGINAL_EXIT_CODE
+      hostAnswers([])
+
+      await main(['automations', 'edit', 'auto-1', flag, '--json'], '/tmp/repo')
+
+      expect(process.exitCode).toBe(1)
+      expect(calledMethods()).not.toContain('automation.update')
+      expect([...logSpy.mock.calls, ...errSpy.mock.calls].flat().join('\n')).toContain(
+        'too old for --claude-account'
+      )
+    }
+  })
+
+  it('does not probe the host when the edit leaves the account alone', async () => {
+    vi.spyOn(console, 'log').mockImplementation(() => {})
+    hostAnswers([])
+
+    await main(['automations', 'edit', 'auto-1', '--name', 'Renamed', '--json'], '/tmp/repo')
+
+    expect(calledMethods()).not.toContain('status.get')
+    expect(callMock).toHaveBeenCalledWith('automation.update', {
+      id: 'auto-1',
+      updates: expect.not.objectContaining({ claudeAccountId: expect.anything() })
+    })
   })
 })

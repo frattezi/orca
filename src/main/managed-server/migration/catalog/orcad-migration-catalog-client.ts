@@ -1,6 +1,9 @@
 import { hasModernAutomationLaunchSetup } from '../../../../shared/automations/launch/automation-launch-setup'
 import { automationCanonicalLaunchSetup } from '../../../../shared/automations/launch/automation-canonical-launch-setup'
-import { AUTOMATION_LAUNCH_SETUP_RUNTIME_CAPABILITY } from '../../../../shared/automations/automation-runtime-capabilities'
+import {
+  AUTOMATION_CLAUDE_ACCOUNT_RUNTIME_CAPABILITY,
+  AUTOMATION_LAUNCH_SETUP_RUNTIME_CAPABILITY
+} from '../../../../shared/automations/automation-runtime-capabilities'
 import {
   parseOrcadMigrationCatalogAbortResult,
   parseOrcadMigrationCatalogState
@@ -22,6 +25,10 @@ import { orcadMigrationManifestBlobs } from '../../../../shared/orcad-migration/
 import { parsePairingCode } from '../../../../shared/remote-runtime/pairing/pairing'
 import { assertOrcadMigrationRequestFits } from './orcad-migration-request-budget'
 import { hasExtraAgentArgs } from '../../../../shared/agent-launch/startup/automation-extra-agent-args'
+import {
+  CLAUDE_ACCOUNT_HOST_UPDATE_REQUIRED,
+  storedClaudeAccountId
+} from '../../../../shared/automations/launch/automation-claude-account'
 import { requiredOrcadMigrationSourceCapability } from '../../../../shared/orcad-migration/orcad-migration-source-kind'
 import type { CatalogRequestOptions } from './orcad-migration-request'
 import { sendSupportedMigrationRequest } from './orcad-migration-request'
@@ -132,6 +139,15 @@ async function request(
         throw new Error(
           'Update Orca on the destination host to keep automation agent launch settings.'
         )
+      }
+      if (
+        imports &&
+        (manifest.payload.dormantState?.automations ?? []).some((automation) =>
+          storedClaudeAccountId(automation.claudeAccountId)
+        ) &&
+        !capabilities.includes(AUTOMATION_CLAUDE_ACCOUNT_RUNTIME_CAPABILITY)
+      ) {
+        throw new Error(CLAUDE_ACCOUNT_HOST_UPDATE_REQUIRED)
       }
       const unsupported = findUnsupportedMigrationBlobKind(requiredBlobs, capabilities)
       if (unsupported) {

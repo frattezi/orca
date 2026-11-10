@@ -3,6 +3,7 @@ import { EVERY_AGENT_CHAT } from '../../shared/native-chat/every-agent-chat.test
 import { launchAutomationTerminalAgent } from './automation-terminal-launch'
 import { AutomationDispatchRefusedError } from './automation-launch-runner'
 import { buildAutomationWorktreeCreateArgs } from './automation-workspace-create'
+import { CLAUDE_PINNED_ACCOUNT_ENV } from '../../shared/claude-profile-routing'
 
 function fakeRuntime(deliverStartupFollowup: () => Promise<boolean>) {
   return {
@@ -57,7 +58,7 @@ describe('headless automation agent launch', () => {
     const runtime = fakeRuntime(async () => true)
     await launch(runtime, false, pinned)
     expect(runtime.launchAgentTerminal.mock.calls[0]![1]).toMatchObject({
-      accountEnv: { ORCA_CLAUDE_PINNED_ACCOUNT_ID: 'acct-b' }
+      accountEnv: { [CLAUDE_PINNED_ACCOUNT_ENV]: 'acct-b' }
     })
     await launch(runtime, false, { ...pinned, agentId: 'codex' })
     expect(runtime.launchAgentTerminal.mock.calls[1]![1]).not.toHaveProperty('accountEnv')
@@ -89,7 +90,7 @@ describe('headless automation agent launch', () => {
       // oxlint-disable-next-line typescript/consistent-type-assertions -- SAFETY: only the repo identity is read.
       repo: { id: 'repo-1', path: '/repo', displayName: 'repo' } as never
     })
-    expect(args.startupAccountEnv).toEqual({ ORCA_CLAUDE_PINNED_ACCOUNT_ID: 'acct-b' })
+    expect(args.startupAccountEnv).toEqual({ [CLAUDE_PINNED_ACCOUNT_ENV]: 'acct-b' })
   })
 
   it.each([

@@ -70,7 +70,7 @@ export function AutomationClaudeAccountField({
       </Select>
       <p
         className={cn(
-          'mt-1.5 text-[11px]',
+          'mt-1.5 text-2xs',
           savedMissing ? 'text-destructive' : 'text-muted-foreground'
         )}
       >

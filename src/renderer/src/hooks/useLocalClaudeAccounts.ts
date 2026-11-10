@@ -1,32 +1,26 @@
-import { useEffect, useState } from 'react'
-import { fetchProviderAccountsSnapshot } from '@/runtime/provider-accounts/observations/runtime-provider-accounts-client'
+import { useMemo } from 'react'
+import { useProviderAccountList } from '@/components/status-bar/use-provider-account-list'
+import { emptyClaudeAccountsState } from '@/runtime/provider-accounts/observations/runtime-provider-accounts-client'
 import type { ClaudeManagedAccountSummary } from '../../../shared/managed-account-types'
+import type { RuntimeClientTarget } from '../../../shared/runtime-client-target'
 
-/** This computer's Claude accounts a launch can pin; null until read, and while `enabled` is false. */
-export function useLocalClaudeAccounts(enabled = true): ClaudeManagedAccountSummary[] | null {
-  const [accounts, setAccounts] = useState<ClaudeManagedAccountSummary[] | null>(null)
-  useEffect(() => {
-    if (!enabled) {
-      return
-    }
-    let cancelled = false
-    fetchProviderAccountsSnapshot({ kind: 'local' })
-      .then((snapshot) => {
-        if (!cancelled) {
-          // Why host only: a pinned launch routes this computer's own account folders.
-          setAccounts(
-            snapshot.claude.accounts.filter((account) => account.managedAuthRuntime !== 'wsl')
-          )
-        }
-      })
-      .catch(() => {
-        if (!cancelled) {
-          setAccounts([])
-        }
-      })
-    return () => {
-      cancelled = true
-    }
-  }, [enabled])
-  return enabled ? accounts : null
+const LOCAL_TARGET: RuntimeClientTarget = { kind: 'local' }
+const EMPTY_CLAUDE_ACCOUNTS = emptyClaudeAccountsState()
+
+/** This computer's Claude accounts a launch can pin; null until a read succeeds. */
+export function useLocalClaudeAccounts(): ClaudeManagedAccountSummary[] | null {
+  const { accounts, accountsLoaded } = useProviderAccountList(
+    'claude',
+    LOCAL_TARGET,
+    '',
+    EMPTY_CLAUDE_ACCOUNTS
+  )
+  return useMemo(
+    () =>
+      accountsLoaded
+        ? // Why host only: a pinned launch routes this computer's own account folders.
+          accounts.accounts.filter((account) => account.managedAuthRuntime !== 'wsl')
+        : null,
+    [accounts, accountsLoaded]
+  )
 }

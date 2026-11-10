@@ -12,22 +12,37 @@ import { useLocalClaudeAccounts } from '@/hooks/useLocalClaudeAccounts'
 import { canPinClaudeAccountForWorktree } from '@/lib/claude-account-pin-availability'
 import type { NewTabAgentMenuRow } from '../../../../shared/agent-launch/picker/agent-launch-picker-rows'
 
-/** Opens Claude's CLI in a new tab on a chosen account, whatever is selected in Settings. */
-export function ClaudeAccountLaunchSubmenu({
-  worktreeId,
-  rows,
-  disabled,
-  runLaunch
-}: {
+type SubmenuProps = {
   worktreeId: string
   rows: readonly NewTabAgentMenuRow[]
   disabled: boolean
   runLaunch: (row: NewTabAgentMenuRow, claudeAccountId?: string) => void
-}): React.JSX.Element | null {
+}
+
+/** Opens Claude's CLI in a new tab on a chosen account, whatever is selected in Settings. */
+export function ClaudeAccountLaunchSubmenu({
+  worktreeId,
+  rows,
+  ...props
+}: SubmenuProps): React.JSX.Element | null {
   const runsHere = useAppStore((s) => canPinClaudeAccountForWorktree(s, worktreeId))
   const claudeRow = rows.find((row) => row.agent === 'claude' && row.kind !== 'chat-unavailable')
-  const accounts = useLocalClaudeAccounts(runsHere && claudeRow !== undefined)
-  if (!claudeRow || !accounts || accounts.length === 0) {
+  // Why a child: the account list is read only where a pin can run.
+  return runsHere && claudeRow ? (
+    <ClaudeAccountLaunchItems claudeRow={claudeRow} {...props} />
+  ) : null
+}
+
+function ClaudeAccountLaunchItems({
+  claudeRow,
+  disabled,
+  runLaunch
+}: Pick<SubmenuProps, 'disabled' | 'runLaunch'> & {
+  claudeRow: NewTabAgentMenuRow
+}): React.JSX.Element | null {
+  // Why: a pinned launch of a signed-out account always fails.
+  const accounts = useLocalClaudeAccounts()?.filter((account) => !account.needsSignIn)
+  if (!accounts || accounts.length === 0) {
     return null
   }
   // Why the CLI: a chat follows the selected account, so only a terminal tab can keep a pin.

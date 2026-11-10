@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 
-import { cleanup, render, screen } from '@testing-library/react'
+import { act, cleanup, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { AutomationDraft } from './AutomationEditorDialog'
 import { AutomationClaudeAccountField } from './AutomationClaudeAccountField'
@@ -24,9 +24,13 @@ const { fetchProviderAccountsSnapshot } = vi.hoisted(() => ({
     rateLimits: null
   }))
 }))
-vi.mock('@/runtime/provider-accounts/observations/runtime-provider-accounts-client', () => ({
-  fetchProviderAccountsSnapshot
-}))
+vi.mock(
+  '@/runtime/provider-accounts/observations/runtime-provider-accounts-client',
+  async (importOriginal) => ({
+    ...(await importOriginal<object>()),
+    fetchProviderAccountsSnapshot
+  })
+)
 
 function draft(claudeAccountId: string): AutomationDraft {
   return {
@@ -78,9 +82,20 @@ describe('AutomationClaudeAccountField', () => {
     expect(screen.getByText('Runs fail until you choose another account.')).toBeTruthy()
   })
 
+  it('keeps a saved account unflagged while the account list cannot be read', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => {})
+    fetchProviderAccountsSnapshot.mockRejectedValueOnce(new Error('ipc down'))
+    renderField('b')
+    await act(async () => {})
+    expect(fetchProviderAccountsSnapshot).toHaveBeenCalled()
+    expect(screen.queryByText('Removed account')).toBeNull()
+    expect(screen.getByText('Runs use this account whatever is selected in Settings.')).toBeTruthy()
+    expect(screen.getByRole('combobox').hasAttribute('disabled')).toBe(true)
+  })
+
   it('is disabled for an automation that runs on another host', async () => {
     renderField('', false)
-    expect(await screen.findByText('Project or selected account')).toBeTruthy()
+    expect(await screen.findByText('Selected account')).toBeTruthy()
     expect(screen.getByRole('combobox').hasAttribute('disabled')).toBe(true)
     expect(
       screen.getByText(

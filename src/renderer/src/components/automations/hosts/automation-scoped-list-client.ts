@@ -33,6 +33,7 @@ import {
 import {
   assertAuthorityCapability,
   prepareAutomationLaunchSetup,
+  assertClaudeAccountSupported,
   assertOwnerFencingSupported,
   assertAutomationCreateIdempotencySupported,
   AutomationHostScopeUnsupportedError,
@@ -227,6 +228,7 @@ async function updateFenced(
   destination?: AutomationDestination
 ): Promise<Automation> {
   await assertOwnerFencingSupported(authority)
+  await assertClaudeAccountSupported(authority, updates.claudeAccountId, 'update')
   const prepared = await prepareAutomationLaunchSetup(authority, updates)
   const result = await callAuthority<{ automation: Automation }>(authority, 'automation.update', {
     id,
@@ -318,6 +320,7 @@ export async function createAutomationForDestination(
   }
   await assertOwnerFencingSupported(authority)
   // Why before create: a move is create-then-delete and must refuse before mutating anything.
+  await assertClaudeAccountSupported(authority, input.claudeAccountId, 'create')
   const prepared = await prepareAutomationLaunchSetup(authority, input)
   const result = await callAuthority<{ automation: Automation }>(authority, 'automation.create', {
     ...toRuntimeAutomationCreateInput(prepared),

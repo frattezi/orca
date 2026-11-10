@@ -24,3 +24,14 @@ export const CLAUDE_PINNED_ACCOUNT_SIGNED_OUT_MESSAGE =
 
 export const CLAUDE_PINNED_ACCOUNT_UNSUPPORTED_MESSAGE =
   'A chosen Claude account is only supported for agents that run on this computer.'
+
+/** Why only the pin: resume relaunches from the launch config, but other account routing is chosen per spawn. */
+export function withClaudePinInLaunchConfig<Config extends { agentEnv: Record<string, string> }>(
+  config: Config,
+  accountEnv: Readonly<Record<string, string>> | undefined
+): Config {
+  const accountId = accountEnv?.[CLAUDE_PINNED_ACCOUNT_ENV]
+  return accountId === undefined
+    ? config
+    : { ...config, agentEnv: { ...config.agentEnv, [CLAUDE_PINNED_ACCOUNT_ENV]: accountId } }
+}

@@ -4,6 +4,8 @@ import type { OrcadMigrationManifest } from '../../../../shared/orcad-migration/
 import { computeOrcadMigrationManifestSha256 } from '../../../orcad/orcad-migration-manifest-digest'
 import { encodePairingOffer } from '../../../../shared/remote-runtime/pairing/pairing'
 import { PAIRING_OFFER_VERSION } from '../../../../shared/remote-runtime/pairing/mobile-relay-pairing-offer'
+import { AUTOMATION_CLAUDE_ACCOUNT_RUNTIME_CAPABILITY } from '../../../../shared/automations/automation-runtime-capabilities'
+import { CLAUDE_ACCOUNT_HOST_UPDATE_REQUIRED } from '../../../../shared/automations/launch/automation-claude-account'
 
 const sendRequest = vi.hoisted(() => vi.fn())
 const status = vi.hoisted(() => ({ capabilities: ['orcad.migration-catalog.v1'] }))
@@ -28,7 +30,8 @@ vi.mock('../../../../shared/remote-runtime/requests/remote-runtime-request-socke
   }
 }))
 
-const { readRemoteOrcadMigrationCatalogState } = await import('./orcad-migration-catalog-client')
+const { readRemoteOrcadMigrationCatalogState, stageRemoteOrcadMigrationCatalog } =
+  await import('./orcad-migration-catalog-client')
 const { stageRemoteOrcadMigrationSnapshotChunk } =
   await import('../transfers/orcad-migration-chunk-client')
 
@@ -120,6 +123,34 @@ describe('remote orcad migration catalog client', () => {
     await expect(readRemoteOrcadMigrationCatalogState(pairingCode, input)).rejects.toThrow(
       'orcad_migration_snapshot_transfer_unsupported'
     )
+  })
+
+  it('refuses to move a pinned Claude account to a host that would drop it', async () => {
+    const input = manifest()
+    input.payload.dormantState = {
+      version: 1,
+      worktreeMeta: [],
+      worktreeLineage: [],
+      workspaceLineage: [],
+      sparsePresets: [],
+      retiredWorktreeNames: [],
+      retiredWorktreeNamespaces: [],
+      // oxlint-disable-next-line typescript/consistent-type-assertions -- SAFETY: only the pinned account is read before the capability check.
+      automations: [{ id: 'auto-1', agentId: 'claude', claudeAccountId: 'acct-b' } as never]
+    }
+    sendRequest.mockResolvedValue({ ok: true, result: { state: 'staged' } })
+
+    await expect(stageRemoteOrcadMigrationCatalog(pairingCode, input)).rejects.toThrow(
+      CLAUDE_ACCOUNT_HOST_UPDATE_REQUIRED
+    )
+    expect(sendRequest).not.toHaveBeenCalled()
+
+    status.capabilities = [
+      'orcad.migration-catalog.v1',
+      AUTOMATION_CLAUDE_ACCOUNT_RUNTIME_CAPABILITY
+    ]
+    await stageRemoteOrcadMigrationCatalog(pairingCode, input).catch(() => {})
+    expect(sendRequest).toHaveBeenCalled()
   })
 
   // #37051: an older host would parse past the history reference and import the automations runless.
