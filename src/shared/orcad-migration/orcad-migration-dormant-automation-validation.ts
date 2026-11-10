@@ -134,6 +134,9 @@ function isMigratedAutomation(value: unknown): value is Automation {
   if (record.launchSetup !== undefined) {
     AutomationCanonicalLaunchSetup.parse(record.launchSetup)
   }
+  if (record.claudeAccountId !== undefined && typeof record.claudeAccountId !== 'string') {
+    throw new Error('orcad_migration_dormant_automation_claude_account_invalid')
+  }
   parseContext(record.runContext, 'workspace-run')
   parseContext(record.sourceContext, 'task-source')
   requiredString(record.projectId, 'orcad_migration_dormant_automation_project_invalid')

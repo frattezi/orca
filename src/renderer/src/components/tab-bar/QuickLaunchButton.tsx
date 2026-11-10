@@ -36,7 +36,9 @@ import { translate } from '@/i18n/i18n'
 import { useTranslate } from '@/i18n/use-translate'
 import { useUiLanguageRevision } from '@/i18n/use-ui-language-revision'
 import { cn } from '@/lib/class-names'
+import { CLAUDE_PINNED_ACCOUNT_ENV } from '../../../../shared/claude-profile-routing'
 import type { NewTabAgentMenuRow } from '../../../../shared/agent-launch/picker/agent-launch-picker-rows'
+import { ClaudeAccountLaunchSubmenu } from './ClaudeAccountLaunchSubmenu'
 import { useNewTabAgentMenuRows, type NewTabAgentMenuModel } from './use-new-tab-agent-menu-rows'
 import { useAgentDetectionTargetForWorktree } from '@/hooks/useAgentDetectionTarget'
 import { chatUnavailableLabel, rowTitle, rowLabel, rowId } from './tab-agent-row-presentation'
@@ -84,7 +86,12 @@ export function useTabAgentMenuLaunch({
   onFocusChat?: (tabId: string) => void
 }) {
   const runLaunch = useCallback(
-    (row: NewTabAgentMenuRow, draft?: AgentPickerDraft, pickerEntry?: AgentPickerEntry) => {
+    (
+      row: NewTabAgentMenuRow,
+      draft?: AgentPickerDraft,
+      pickerEntry?: AgentPickerEntry,
+      claudeAccountId?: string
+    ) => {
       if (
         disabled ||
         row.kind === 'chat-unavailable' ||
@@ -118,6 +125,9 @@ export function useTabAgentMenuLaunch({
           : {}),
         worktreeId,
         groupId,
+        ...(claudeAccountId
+          ? { accountEnv: { [CLAUDE_PINNED_ACCOUNT_ENV]: claudeAccountId } }
+          : {}),
         // A caller's prompt (notes) owns the launch; otherwise the picker panel's typed one.
         ...(prompt !== undefined ? { prompt } : draft?.prompt ? { prompt: draft.prompt } : {}),
         ...(promptDelivery !== undefined ? { promptDelivery } : {}),
@@ -191,14 +201,17 @@ export function ProjectedAgentMenuItems({
   runLaunch,
   pickerInventory,
   onSelectPickerAgent,
-  hidePickerSearch
+  hidePickerSearch,
+  worktreeId
 }: {
   disabled?: boolean
   model: NewTabAgentMenuModel
-  runLaunch: React.ComponentProps<typeof SubscribedAgentLaunchPickerMenu>['runLaunch']
+  runLaunch: ReturnType<typeof useTabAgentMenuLaunch>
   pickerInventory?: AgentPickerInventorySource
   onSelectPickerAgent?: (agent: AgentPickerEntry['agent']) => void
   hidePickerSearch?: boolean
+  /** Offers Claude's CLI on a chosen account when set. */
+  worktreeId?: string
 }): React.JSX.Element {
   const t = useTranslate()
   const desktopDefaultAgent = useAppStateValue((s) => s.settings?.defaultTuiAgent)
@@ -335,6 +348,14 @@ export function ProjectedAgentMenuItems({
           )
         })
       )}
+      {worktreeId ? (
+        <ClaudeAccountLaunchSubmenu
+          worktreeId={worktreeId}
+          rows={rows}
+          disabled={disabled}
+          runLaunch={(row, accountId) => runLaunch(row, undefined, undefined, accountId)}
+        />
+      ) : null}
       <AgentSettingsMenuItem onSelect={openAgentSettings} />
     </>
   )

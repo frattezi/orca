@@ -33,6 +33,7 @@ import '@/lib/agent-session/launch/routing/agent-launch-route-input'
 import { workspaceKindForWorktreeId } from '../../../../../../shared/agent-launch/contracts/workspace-launch-kind'
 import { launchOnceHostAnswered, routeNewTabLaunch } from './launch-agent-in-new-tab-host-agents'
 import type { AgentTabLaunchOutcome } from './launch-agent-in-new-tab-host-agents'
+import { withPinnedAccountEnv } from './pinned-account-startup-plan'
 
 /**
  * Create a new terminal tab and queue the agent's launch command, optionally
@@ -211,7 +212,9 @@ function openAgentInNewTab(
     }
   }
 
-  const { startupPlan, pasteDraftAfterLaunch, submitPastedPrompt } = buildStartup()
+  const built = buildStartup()
+  const { pasteDraftAfterLaunch, submitPastedPrompt } = built
+  const startupPlan = withPinnedAccountEnv(built.startupPlan, args.accountEnv)
   let promptDeliveryResult: Promise<{ delivered: boolean; failureNotified: boolean }> | undefined
   if (!startupPlan) {
     return refuseAgentTabLaunch(args, agentLaunchCheckSettingsMessage(), notify, notifyFailure)
@@ -222,6 +225,8 @@ function openAgentInNewTab(
   }
   if (
     pasteDraftAfterLaunch !== null &&
+    // Why: the host's launch builds its own env, so a pinned account would be dropped there.
+    !args.accountEnv &&
     newTabPromptLaunchesThroughHost({ promptDelivery, pastesPrompt: true, isRemote })
   ) {
     const launched = launchNewTabPromptThroughHost({

@@ -6,6 +6,7 @@ import type { AutomationRun } from '../../shared/automations/history/automation-
 import { buildAutomationWorkspaceProvenance } from '../../shared/automations/ownership/automation-workspace-provenance'
 import type { Repo } from '../../shared/repo-types'
 import type { OrcaRuntimeService } from '../runtime/orca-runtime'
+import { automationClaudeAccountEnv } from '../../shared/automations/launch/automation-claude-account'
 
 type HeadlessAutomationRunForWorkspace = Pick<AutomationRun, 'id' | 'title' | 'scheduledFor'>
 type RuntimeCreateManagedWorktreeArgs = Parameters<OrcaRuntimeService['createManagedWorktree']>[0]
@@ -36,6 +37,7 @@ export function buildAutomationWorktreeCreateArgs({
   createdAt?: number
 }): RuntimeCreateManagedWorktreeArgs {
   const setup = automationTerminalLaunchInputs(automation)
+  const accountEnv = automationClaudeAccountEnv(automation)
   return {
     repoSelector: hostQualifiedRepoSelector(`id:${repo.id}`, getRepoExecutionHostId(repo)),
     name: buildHeadlessAutomationWorkspaceName(run.title, run.scheduledFor),
@@ -52,6 +54,7 @@ export function buildAutomationWorktreeCreateArgs({
     ...(setup.extraAgentArgs ? { startupExtraAgentArgs: setup.extraAgentArgs } : {}),
     ...(setup.agentArgs !== undefined ? { startupAgentArgs: setup.agentArgs } : {}),
     ...(setup.sessionOptions ? { startupSessionOptions: setup.sessionOptions } : {}),
+    ...(accountEnv ? { startupAccountEnv: accountEnv } : {}),
     telemetrySource: 'unknown',
     automationProvenance: buildAutomationWorkspaceProvenance(automation, run, repo, createdAt)
   }

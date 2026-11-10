@@ -49,6 +49,7 @@ export const AUTOMATION_COMMAND_SPECS: CommandSpec[] = [
       'prompt',
       'provider',
       'extra-agent-args',
+      'claude-account',
       ...AUTOMATION_PRECHECK_FLAGS,
       ...AUTOMATION_TARGET_FLAGS,
       ...AUTOMATION_SCHEDULE_FLAGS,
@@ -66,7 +67,8 @@ export const AUTOMATION_COMMAND_SPECS: CommandSpec[] = [
       'Use --precheck-timeout <seconds> to set the time limit (default 60 seconds). Skips appear in Orca run history and orca automations runs --id <automation-id> as skipped_precheck.',
       'Run now in Orca and orca automations run intentionally bypass the precheck so you can test or override the scheduled condition.',
       'Use --reuse-session only with existing-workspace automations to submit later runs to the previous live automation session when it is still available. Use --fresh-session to disable reuse.',
-      'Use --extra-agent-args="--model opus --effort high" to add arguments after the host\'s default agent Arguments on each fresh run. Only model, effort, and a few safe options are accepted (Antigravity, Claude, Codex, CodeBuddy, Cursor, Grok, OMP, Pi); extras cannot be combined with --reuse-session. On edit, --extra-agent-args= clears them.'
+      'Use --extra-agent-args="--model opus --effort high" to add arguments after the host\'s default agent Arguments on each fresh run. Only model, effort, and a few safe options are accepted (Antigravity, Claude, Codex, CodeBuddy, Cursor, Grok, OMP, Pi); extras cannot be combined with --reuse-session. On edit, --extra-agent-args= clears them.',
+      'Use --claude-account <id> (an id from `orca account list`) to run a Claude automation with that account whatever is selected; only for automations that run on this computer. On edit, --claude-account= follows the selected account again.'
     ],
     examples: [
       'orca automations create --name "Daily review" --trigger daily --prompt "Review open changes" --provider codex',
@@ -87,6 +89,7 @@ export const AUTOMATION_COMMAND_SPECS: CommandSpec[] = [
       'prompt',
       'provider',
       'extra-agent-args',
+      'claude-account',
       ...AUTOMATION_PRECHECK_FLAGS,
       ...AUTOMATION_TARGET_FLAGS,
       ...AUTOMATION_SCHEDULE_FLAGS,

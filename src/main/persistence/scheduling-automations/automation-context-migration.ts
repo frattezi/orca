@@ -16,6 +16,7 @@ import type { Repo } from '../../../shared/repo-types'
 import { normalizeAutomationPrecheck } from '../../../shared/automations/launch/automation-precheck'
 import { hasExtraAgentArgs } from '../../../shared/agent-launch/startup/automation-extra-agent-args'
 import { getAutomationLegacyRepoId } from '../../../shared/automations/history/automation-run-identity'
+import { storedClaudeAccountId } from '../../../shared/automations/launch/automation-claude-account'
 import { projectHostSetupProjectionFromRepos } from '../../../shared/project-host-setup-projection'
 import {
   type WorkspaceRunContext,
@@ -103,10 +104,12 @@ export function normalizeAutomationSessionReuse(automation: Automation): Automat
     automation.workspaceMode,
     automation.setupDecision
   )
-  const { extraAgentArgs, setupTrustHash, ...rest } = automation
+  const { extraAgentArgs, setupTrustHash, claudeAccountId, ...rest } = automation
+  const storedAccountId = storedClaudeAccountId(claudeAccountId)
   return {
     ...rest,
     ...(hasExtraAgentArgs(extraAgentArgs) ? { extraAgentArgs } : {}),
+    ...(storedAccountId ? { claudeAccountId: storedAccountId } : {}),
     precheck: normalizeAutomationPrecheck(automation.precheck),
     setupDecision,
     ...automationSetupTrustHash(setupDecision, setupTrustHash),
