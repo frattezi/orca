@@ -54,6 +54,10 @@ describe('repo set worktree visibility', () => {
   it.each([
     { args: ['--repo', 'id:repo-1'], message: 'Missing required --external-worktree-visibility' },
     {
+      args: ['--repo', 'id:repo-1', '--claude-account'],
+      message: '--claude-account requires an account id'
+    },
+    {
       args: ['--repo', 'id:repo-1', '--external-worktree-visibility'],
       message: '--external-worktree-visibility requires a value'
     },
@@ -72,5 +76,22 @@ describe('repo set worktree visibility', () => {
       message: expect.stringContaining(message)
     })
     expect(client.call).not.toHaveBeenCalled()
+  })
+
+  it.each([
+    { args: ['--claude-account', 'acct-b'], updates: { claudeAccountId: 'acct-b' } },
+    { args: ['--claude-account=acct-b'], updates: { claudeAccountId: 'acct-b' } },
+    { args: ['--claude-account='], updates: { claudeAccountId: null } },
+    {
+      args: ['--claude-account', 'acct-b', '--external-worktree-visibility', 'hide'],
+      updates: { externalWorktreeVisibility: 'hide', claudeAccountId: 'acct-b' }
+    }
+  ])('sends $updates for $args', async ({ args, updates }) => {
+    await run(['--repo', 'id:repo-1', ...args, '--json'])
+
+    expect(client.call).toHaveBeenCalledExactlyOnceWith('repo.update', {
+      repo: 'id:repo-1',
+      updates
+    })
   })
 })

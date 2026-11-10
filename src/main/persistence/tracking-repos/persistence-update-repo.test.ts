@@ -188,4 +188,25 @@ describe('Store', () => {
     ).rejects.toThrow('The project changed while Orca was checking it')
     expect(write).not.toHaveBeenCalled()
   })
+
+  it('updateRepo persists and clears the Claude account binding', async () => {
+    const store = await createStore()
+    store.addRepo(makeRepo())
+
+    expect(store.updateRepo({ id: 'r1' }, { claudeAccountId: ' acct-1 ' })!.claudeAccountId).toBe(
+      'acct-1'
+    )
+    store.flush()
+    const reloaded = await createStore()
+    expect(reloaded.getRepo('r1')!.claudeAccountId).toBe('acct-1')
+
+    // Why both: the settings Select clears with null, a blank string must clear too.
+    expect(reloaded.updateRepo({ id: 'r1' }, { claudeAccountId: null })!.claudeAccountId).toBe(
+      undefined
+    )
+    reloaded.updateRepo({ id: 'r1' }, { claudeAccountId: 'acct-1' })
+    expect(reloaded.updateRepo({ id: 'r1' }, { claudeAccountId: '  ' })!.claudeAccountId).toBe(
+      undefined
+    )
+  })
 })

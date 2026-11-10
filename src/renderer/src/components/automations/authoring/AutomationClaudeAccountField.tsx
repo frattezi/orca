@@ -53,7 +53,7 @@ export function AutomationClaudeAccountField({
           <SelectItem value={FOLLOW_SELECTION_VALUE}>
             {translate(
               'auto.components.automations.claudeAccount.followSelection',
-              'Selected account'
+              'Project or selected account'
             )}
           </SelectItem>
           {(accounts ?? []).map((account) => (

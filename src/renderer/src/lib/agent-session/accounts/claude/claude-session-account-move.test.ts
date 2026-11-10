@@ -133,6 +133,7 @@ function seedPanes(panes: SeededPane[]): void {
       ])
     ),
     agentStatusByPaneKey: statuses,
+    repos: [],
     paneForegroundAgentByPaneKey: {},
     agentLaunchConfigByPaneKey: {},
     sleepingAgentSessionsByPaneKey: {},
@@ -178,6 +179,24 @@ describe('findMovableClaudeSessions', () => {
     })
 
     expect(await movable()).toEqual([ptyId(1)])
+  })
+
+  it('leaves panes in a project bound to a Claude account where they are', async () => {
+    seedPanes([{ n: 1, agentType: 'claude' }])
+    useAppStore.setState({
+      repos: [
+        {
+          id: 'wt1',
+          path: '/repo',
+          displayName: 'repo',
+          badgeColor: '#000000',
+          addedAt: 0,
+          claudeAccountId: 'acct-a'
+        }
+      ]
+    })
+
+    expect(await movable()).toEqual([])
   })
 
   it("keeps a shared session running after the other pane's sidebar row was dismissed", async () => {

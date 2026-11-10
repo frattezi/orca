@@ -5,6 +5,7 @@ import type { GitRemoteIdentity } from '../../../shared/git/remotes/git-remote-i
 import { normalizeRepoBadgeColor } from '../../../shared/repo-badge-color'
 import { sanitizeRepoIcon } from '../../../shared/repo-icon'
 import { normalizeGhAccountBinding } from '../../../shared/github/account-binding'
+import { normalizeRepoClaudeAccountUpdate } from '../../../shared/repo-claude-account'
 import { normalizeJiraProjectReference } from '../../../shared/jira/jira-project-reference'
 import type { GhAccountBinding } from '../../../shared/github/account-binding'
 import { sanitizeAgentWorkspaceTrustDecision } from '../../../shared/agent-launch/permissions/agent-workspace-trust-decision'
@@ -85,6 +86,7 @@ export function sanitizeRepoUpdatesForPersistence<
     >
   > & {
     ghAccount?: GhAccountBinding | null
+    claudeAccountId?: string | null
   }
 >(updates: T): T {
   const sanitized = { ...updates }
@@ -161,6 +163,14 @@ export function sanitizeRepoUpdatesForPersistence<
       delete sanitized.agentWorkspaceTrust
     } else {
       sanitized.agentWorkspaceTrust = agentWorkspaceTrust
+    }
+  }
+  if ('claudeAccountId' in sanitized) {
+    const claudeAccountId = normalizeRepoClaudeAccountUpdate(sanitized.claudeAccountId)
+    if (claudeAccountId === undefined) {
+      delete sanitized.claudeAccountId
+    } else {
+      sanitized.claudeAccountId = claudeAccountId
     }
   }
   // Null explicitly clears ghAccount; only malformed shapes are discarded.

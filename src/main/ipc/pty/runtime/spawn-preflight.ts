@@ -1,4 +1,7 @@
-import { resolveClaudeSpawnAuth } from '../../../claude-accounts/claude-spawn-auth'
+import {
+  projectClaudeAccountIdForWorktree,
+  resolveClaudeSpawnAuth
+} from '../../../claude-accounts/claude-spawn-auth'
 import type { PtySpawnResult } from '../../../providers/pty-provider-contract'
 import { LocalPtyProvider } from '../../../providers/local-pty/local-pty-provider'
 import { isValidTerminalTabId } from '../../../../shared/workspace-layout/terminal-tab-id'
@@ -104,7 +107,8 @@ export async function prepareRuntimePtySpawn(
     env: args.env,
     target: ctx.codexSelectionTarget,
     isClaudeLaunch: ctx.isClaudeLaunch,
-    prepareClaudeAuth: ctx.deps.prepareClaudeAuth
+    prepareClaudeAuth: ctx.deps.prepareClaudeAuth,
+    projectClaudeAccountId: projectClaudeAccountIdForWorktree(ctx.deps.store, args.worktreeId)
   })
   args.env = claudeSpawn.env
   ctx.claudeAuth = claudeSpawn.claudeAuth ? await claudeSpawn.claudeAuth : null
