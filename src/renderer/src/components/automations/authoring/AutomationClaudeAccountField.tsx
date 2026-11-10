@@ -6,9 +6,9 @@ import {
   SelectValue
 } from '@/components/ui/select'
 import { translate } from '@/i18n/i18n'
-import { cn } from '@/lib/utils'
+import { cn } from '@/lib/class-names'
 import { useLocalClaudeAccounts } from '@/hooks/useLocalClaudeAccounts'
-import { AUTOMATION_EDITOR_SECTION_LABEL_CLASS, Field } from './automation-page-parts'
+import { AUTOMATION_EDITOR_SECTION_LABEL_CLASS, Field } from '../automation-page-parts'
 import type { AutomationDraft } from './AutomationEditorDialog'
 
 // Why a sentinel: a Select item cannot carry the empty value the draft uses for "follow".

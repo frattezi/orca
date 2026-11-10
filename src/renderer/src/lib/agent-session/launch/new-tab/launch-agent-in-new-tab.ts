@@ -33,6 +33,7 @@ import '@/lib/agent-session/launch/routing/agent-launch-route-input'
 import { workspaceKindForWorktreeId } from '../../../../../../shared/agent-launch/contracts/workspace-launch-kind'
 import { launchOnceHostAnswered, routeNewTabLaunch } from './launch-agent-in-new-tab-host-agents'
 import type { AgentTabLaunchOutcome } from './launch-agent-in-new-tab-host-agents'
+import { withAgentAccountEnv } from './launch-agent-account-env'
 
 /**
  * Create a new terminal tab and queue the agent's launch command, optionally
@@ -212,18 +213,7 @@ function openAgentInNewTab(
   }
 
   const { startupPlan: plannedStartup, pasteDraftAfterLaunch, submitPastedPrompt } = buildStartup()
-  // Why the launch config too: a restored pane relaunches on its pinned account.
-  const startupPlan =
-    plannedStartup && args.accountEnv
-      ? {
-          ...plannedStartup,
-          env: { ...plannedStartup.env, ...args.accountEnv },
-          launchConfig: {
-            ...plannedStartup.launchConfig,
-            agentEnv: { ...plannedStartup.launchConfig.agentEnv, ...args.accountEnv }
-          }
-        }
-      : plannedStartup
+  const startupPlan = withAgentAccountEnv(plannedStartup, args.accountEnv)
   let promptDeliveryResult: Promise<{ delivered: boolean; failureNotified: boolean }> | undefined
   if (!startupPlan) {
     return refuseAgentTabLaunch(args, agentLaunchCheckSettingsMessage(), notify, notifyFailure)

@@ -24,7 +24,9 @@ const { fetchProviderAccountsSnapshot } = vi.hoisted(() => ({
     rateLimits: null
   }))
 }))
-vi.mock('@/runtime/provider-accounts/observations/runtime-provider-accounts-client', () => ({ fetchProviderAccountsSnapshot }))
+vi.mock('@/runtime/provider-accounts/observations/runtime-provider-accounts-client', () => ({
+  fetchProviderAccountsSnapshot
+}))
 
 function draft(claudeAccountId: string): AutomationDraft {
   return {
