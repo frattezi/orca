@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { useAppStore } from '@/store/index'
 import type { AgentStatusEntry } from '../../../../../../shared/agent-status/contracts/agent-status-types'
 import { makePaneKey } from '../../../../../../shared/workspace-layout/stable-pane-id'
+import { CLAUDE_PINNED_ACCOUNT_ENV } from '../../../../../../shared/claude-profile-routing'
 import type { TerminalTab } from '../../../../../../shared/workspace-layout/terminal-tab-types'
 import type { ClaudeManagedAccount } from '../../../../../../shared/managed-account-types'
 import type { ProjectExecutionRuntimeResolution } from '../../../../../../shared/execution-host/project-execution-runtime'
@@ -164,6 +165,19 @@ describe('findMovableClaudeSessions', () => {
       hasChildProcesses: true
     })
     vi.mocked(confirmRuntimeTerminalForegroundProcess).mockResolvedValue('claude')
+  })
+
+  it('leaves a pane launched on a chosen account where it is', async () => {
+    seedPanes([
+      { n: 1, agentType: 'claude' },
+      { n: 2, agentType: 'claude' }
+    ])
+    useAppStore.getState().registerAgentLaunchConfig(makePaneKey(tabId(2), leafId(2)), {
+      agentArgs: '',
+      agentEnv: { [CLAUDE_PINNED_ACCOUNT_ENV]: 'acct-a' }
+    })
+
+    expect(await movable()).toEqual([ptyId(1)])
   })
 
   it("keeps a shared session running after the other pane's sidebar row was dismissed", async () => {

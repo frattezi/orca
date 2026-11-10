@@ -35,6 +35,7 @@ import {
   resolveAgentLaunchRuntime
 } from './agent-launch-scope-runtime'
 import { resolveQoderTerminalCommand } from './qoder-terminal-command-resolution'
+import { withClaudePinInLaunchConfig } from '../../../../shared/claude-profile-routing'
 import { resolveStartupShell } from '../../../../shared/agent-launch/startup/tui-agent-startup-shell'
 import { resolveWslSessionContext } from '../../../daemon/pty-subprocess/wsl-session-context'
 import { isTuiAgentEnabled } from '../../../../shared/agent-launch/catalog/tui-agent-selection'
@@ -239,7 +240,7 @@ async function buildRuntimeAgentTerminalStartupOptions(
     ...opts,
     command: startupPlan.launchCommand,
     ...(env ? { env } : {}),
-    launchConfig: startupPlan.launchConfig,
+    launchConfig: withClaudePinInLaunchConfig(startupPlan.launchConfig, opts.accountEnv),
     launchAgent: agent,
     startupCommandDelivery: startupPlan.startupCommandDelivery,
     // A bare command the user typed stays out of launch accounting, as before.

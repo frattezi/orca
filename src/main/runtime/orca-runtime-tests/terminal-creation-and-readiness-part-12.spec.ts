@@ -14,6 +14,7 @@ import { AgentLaunch } from '../../../shared/rpc-contract/agent-launch-params'
 import { DESKTOP_RPC_CALLER } from '../rpc/rpc-caller-identity'
 import type { RpcContext } from '../rpc/core'
 import type { AgentLaunchTabPublished } from '../../../shared/agent-launch/contracts/agent-launch-tab-publication'
+import { CLAUDE_PINNED_ACCOUNT_ENV } from '../../../shared/claude-profile-routing'
 
 const RESERVED_TAB_ID = '9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d'
 const RESERVED_LEAF_ID = '3f2504e0-4f89-41d3-9a0c-0305e82c3301'
@@ -192,5 +193,28 @@ describe('OrcaRuntimeService', () => {
     expect(created.isReattach).toBe(true)
     expect((await runtime.listTerminals()).terminals.map((t) => t.handle)).toEqual([created.handle])
     expect(revealTerminalSession).toHaveBeenCalledTimes(1)
+  })
+
+  it("keeps only an agent launch's Claude pin in the launch config a resume relaunches from", async () => {
+    const spawn = vi.fn().mockResolvedValue({ id: 'pty-pinned' })
+    const runtime = new OrcaRuntimeService(store)
+    runtime.setPtyController({
+      spawn,
+      write: () => true,
+      kill: () => true,
+      getForegroundProcess: async () => null
+    })
+    runtime.attachWindow(1)
+    runtime.syncWindowGraph(1, { tabs: [], leaves: [] })
+
+    await runtime.createTerminal(`path:${TEST_WORKTREE_PATH}`, {
+      startupAgent: 'claude',
+      accountEnv: { [CLAUDE_PINNED_ACCOUNT_ENV]: 'acct-b', CODEX_HOME: '/home/u/.codex-b' }
+    })
+
+    const spawned = spawn.mock.calls[0]?.[0]
+    expect(spawned?.env).toMatchObject({ [CLAUDE_PINNED_ACCOUNT_ENV]: 'acct-b' })
+    expect(spawned?.launchConfig?.agentEnv).toMatchObject({ [CLAUDE_PINNED_ACCOUNT_ENV]: 'acct-b' })
+    expect(spawned?.launchConfig?.agentEnv).not.toHaveProperty('CODEX_HOME')
   })
 })

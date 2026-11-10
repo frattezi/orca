@@ -16,6 +16,7 @@ import { deliverTerminalAgentLaunchPrompt } from '../runtime/rpc/methods/agent-l
 import { AutomationRunLaunchError, type AutomationLaunch } from './automation-launch'
 import { AutomationDispatchRefusedError } from './automation-launch-runner'
 import { buildAutomationWorktreeCreateArgs } from './automation-workspace-create'
+import { automationClaudeAccountEnv } from '../../shared/automations/launch/automation-claude-account'
 import type { AutomationRunTargetResult } from './run-target-resolution'
 
 const TERMINAL_ONLY_MESSAGE = 'An automation starts a terminal agent only.'
@@ -42,6 +43,7 @@ export async function launchAutomationTerminalAgent(
 ): Promise<AutomationTerminalAgentLaunch> {
   const { automation, run, target } = request
   const agent = automation.agentId
+  const accountEnv = automationClaudeAccountEnv(automation)
   const selectedTarget =
     automation.workspaceMode === 'existing'
       ? await resolveLocalExistingWorkspace(runtime, automation, target)
@@ -134,6 +136,7 @@ export async function launchAutomationTerminalAgent(
             title: run.title,
             suppressStartupUpdatePrompt: true,
             ...automationTerminalLaunchInputs(automation),
+            ...(accountEnv ? { accountEnv } : {}),
             // Run now is the user's act and may start a stopped WSL distro; a scheduled run never does.
             ...(run.trigger === 'scheduled' ? {} : { wslUserAct: true as const }),
             surfaceOwner: false

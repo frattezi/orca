@@ -1,13 +1,19 @@
 import { callRuntimeRpc } from '@/runtime/rpc/calls/runtime-rpc-call'
 import { getPairedWebClientEnvironmentId } from '@/app-shell/platform/paired-web-client-host'
-import { prepareAutomationLaunchSetup } from './automation-capability-probe'
+import {
+  assertClaudeAccountSupported,
+  prepareAutomationLaunchSetup
+} from './automation-capability-probe'
 import type {
   Automation,
   AutomationCreateInput,
   AutomationUpdateInput
 } from '../../../../../shared/automations/automation-definition'
 import type { AutomationRun } from '../../../../../shared/automations/history/automation-run'
-import type { StableAutomationAuthorityRef } from '../../../../../shared/automations/ownership/automation-owner-ref'
+import type {
+  AutomationAuthorityRef,
+  StableAutomationAuthorityRef
+} from '../../../../../shared/automations/ownership/automation-owner-ref'
 import { parseExecutionHostId } from '../../../../../shared/execution-host'
 import type { GlobalSettings } from '../../../../../shared/global-settings-types'
 
@@ -146,12 +152,12 @@ export async function updateAutomationForTarget(
   sourceTarget?: AutomationHostTarget | null
 ): Promise<Automation> {
   const target = getAutomationOwnerTarget(automation, sourceTarget)
-  const prepared = await prepareAutomationLaunchSetup(
+  const authority: AutomationAuthorityRef =
     target.kind === 'environment'
       ? { kind: 'runtime', environmentId: target.environmentId, pairingRevision: 0 }
-      : { kind: 'desktop' },
-    updates
-  )
+      : { kind: 'desktop' }
+  await assertClaudeAccountSupported(authority, updates.claudeAccountId, 'update')
+  const prepared = await prepareAutomationLaunchSetup(authority, updates)
   const result = await callRuntimeRpc<{ automation: Automation }>(
     target,
     'automation.update',

@@ -1,6 +1,4 @@
-import { spawnSync } from 'node:child_process'
 import {
-  chmodSync,
   existsSync,
   mkdirSync,
   mkdtempSync,
@@ -22,7 +20,6 @@ import {
   type ClaudeProfileDescriptor
 } from './claude-profile-paths'
 import { CLAUDE_PROFILE_SETUP_FAILED_MESSAGE } from '../../shared/claude-profile-routing'
-import { getPosixClaudeShellFunction } from '../../shared/claude-shell-function'
 import { ClaudeProfileRouter, type ClaudeProfileRouterSettings } from './claude-profile-router'
 import {
   claudeProfileHistoryDirs,
@@ -32,6 +29,7 @@ import {
 } from './claude-profile-installed-router'
 import { ClaudeObservedConfigDirs } from './claude-observed-config-dirs'
 import { claudeRoutedHomeAsync } from './claude-profile-routed-home'
+import { claudeShellProbe } from './claude-shell-probe.test-fixture'
 
 vi.mock('@orca/process-host', () => ({ runProcess: vi.fn() }))
 const command = vi.hoisted(() => ({ path: '/unused-claude' }))
@@ -141,19 +139,6 @@ async function advanceRefreshDeadline(launch: Promise<unknown>, waitMs: number):
   await vi.advanceTimersByTimeAsync(waitMs - 1)
   expect(settled).toBe(false)
   await vi.advanceTimersByTimeAsync(1)
-}
-
-function claudeShellProbe(root: string): (env: Record<string, string>, rc?: string) => string {
-  const bin = join(root, 'bin')
-  mkdirSync(bin)
-  writeFileSync(join(bin, 'claude'), '#!/bin/sh\nprintf "%s" "${CLAUDE_CONFIG_DIR-unset}"\n')
-  chmodSync(join(bin, 'claude'), 0o700)
-  return (env, rc = '') =>
-    spawnSync(
-      '/bin/bash',
-      ['--norc', '--noprofile', '-c', `${getPosixClaudeShellFunction()}\n${rc}claude`],
-      { env: { ...env, PATH: `${bin}:/usr/bin:/bin` }, encoding: 'utf8' }
-    ).stdout
 }
 
 describe('ClaudeProfileRouter', () => {

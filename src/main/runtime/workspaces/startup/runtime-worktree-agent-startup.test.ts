@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { Repo } from '../../../../shared/repo-types'
 import '../../../../shared/agent-kind'
+import { CLAUDE_PINNED_ACCOUNT_ENV } from '../../../../shared/claude-profile-routing'
 import { getDefaultSettings } from '../../../../shared/constants'
 
 import type { AgentLaunchRuntime } from '../../../../shared/agent-launch/startup/agent-launch-runtime'
@@ -217,6 +218,32 @@ describe('buildWorktreeStartupForAgent extra agent args', () => {
 
     expect(resolved?.startup.env).toEqual({ CODEX_HOME: '/home/u/.codex-b', KEEP: '1' })
     expect(resolved?.launchRuntime).toBe(LINUX_FACT)
+  })
+
+  it("persists only a launch's Claude pin into the launch config a resume relaunches from", async () => {
+    const build = vi.fn(() => ({
+      agent: 'claude' as const,
+      startup: {
+        command: 'claude',
+        launchConfig: { agentArgs: '', agentEnv: { KEEP: '1' } }
+      },
+      launchRuntime: LINUX_FACT
+    }))
+    const resolved = await resolveWorktreeCreateAgentStartup(
+      {
+        repoSelector: 'repo-1',
+        name: 'Review',
+        startupAgent: 'claude',
+        startupAccountEnv: { [CLAUDE_PINNED_ACCOUNT_ENV]: 'acct-b', CODEX_HOME: '/codex-b' }
+      },
+      build
+    )
+
+    expect(resolved?.startup.env).toMatchObject({ [CLAUDE_PINNED_ACCOUNT_ENV]: 'acct-b' })
+    expect(resolved?.startup.launchConfig?.agentEnv).toEqual({
+      KEEP: '1',
+      [CLAUDE_PINNED_ACCOUNT_ENV]: 'acct-b'
+    })
   })
 })
 

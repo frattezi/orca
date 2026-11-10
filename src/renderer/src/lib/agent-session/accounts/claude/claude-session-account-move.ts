@@ -3,6 +3,7 @@
 /** Find sessions affected by account selection; resume preserves the session while launch reads the newly selected account folder. */
 import { useAppStore } from '@/store/index'
 import type { AppState } from '@/store/types'
+import { paneKeepsClaudeAccount } from './claude-pinned-panes'
 import {
   confirmRuntimeTerminalForegroundProcess,
   inspectRuntimeTerminalProcess
@@ -121,7 +122,11 @@ function* localClaudePanes(
           continue
         }
         const entry = state.agentStatusByPaneKey[makePaneKey(tab.id, leafId)]
-        if (entry?.agentType !== 'claude' || entry.structuredHostOwned) {
+        if (
+          entry?.agentType !== 'claude' ||
+          entry.structuredHostOwned ||
+          paneKeepsClaudeAccount(state, entry)
+        ) {
           continue
         }
         const { laneKey } = resolveCodexPaneSelectionLane({ state, tab, ptyId })

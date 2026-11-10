@@ -8,7 +8,8 @@ import {
   AUTOMATION_OWNER_FENCING_RUNTIME_CAPABILITY,
   AUTOMATION_OWNER_FENCING_UPDATE_REQUIRED_MESSAGE,
   AUTOMATION_CREATE_IDEMPOTENCY_RUNTIME_CAPABILITY,
-  AUTOMATION_EXTRA_AGENT_ARGS_RUNTIME_CAPABILITY
+  AUTOMATION_EXTRA_AGENT_ARGS_RUNTIME_CAPABILITY,
+  AUTOMATION_CLAUDE_ACCOUNT_RUNTIME_CAPABILITY
 } from '../../../../../shared/automations/automation-runtime-capabilities'
 import { getRuntimeEnvironmentStatus } from '@/runtime/rpc/compatibility/runtime-compatibility-probe'
 import type { AutomationAuthorityRef } from '../../../../../shared/automations/ownership/automation-owner-ref'
@@ -17,6 +18,10 @@ import {
   EXTRA_AGENT_ARGS_HOST_UPDATE_REQUIRED,
   hasExtraAgentArgs
 } from '../../../../../shared/agent-launch/startup/automation-extra-agent-args'
+import {
+  CLAUDE_ACCOUNT_HOST_UPDATE_REQUIRED,
+  writesClaudeAccount
+} from '../../../../../shared/automations/launch/automation-claude-account'
 import { automationAuthorityCatalogKey } from './automation-host-catalog-types'
 import { automationHostDiagnostics } from './automation-host-diagnostics'
 import { translate } from '@/i18n/i18n'
@@ -172,6 +177,25 @@ export async function assertExtraAgentArgsSupported(
     authority,
     AUTOMATION_EXTRA_AGENT_ARGS_RUNTIME_CAPABILITY,
     extraAgentArgsHostUpdateRequired()
+  )
+}
+
+/** Older hosts strip claudeAccountId and would run on their own selected account. */
+export async function assertClaudeAccountSupported(
+  authority: AutomationAuthorityRef,
+  claudeAccountId: string | undefined,
+  write: 'create' | 'update'
+): Promise<void> {
+  if (!writesClaudeAccount(claudeAccountId, write)) {
+    return
+  }
+  await assertAuthorityCapability(
+    authority,
+    AUTOMATION_CLAUDE_ACCOUNT_RUNTIME_CAPABILITY,
+    translate(
+      'auto.components.automations.claudeAccount.hostUpdateRequired',
+      CLAUDE_ACCOUNT_HOST_UPDATE_REQUIRED
+    )
   )
 }
 

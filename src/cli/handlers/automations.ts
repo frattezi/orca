@@ -50,6 +50,7 @@ import {
   getSourceContextFlag,
   getWorkspaceModeFlag
 } from './automation-handler-flags'
+import { getClaudeAccountFlag } from './claude-account-flag'
 import { getExtraAgentArgsFlag } from './automation-extra-agent-args-flag'
 import { assertAutomationFieldsSupported } from './automation-host-support'
 import { assertAutomationSetupMode, getAutomationSetupFlag } from './automation-setup-flag'
@@ -186,6 +187,7 @@ export const AUTOMATION_HANDLERS: Record<string, CommandHandler> = {
       agentId: getProviderFlag(flags),
       extraAgentArgs: getExtraAgentArgsFlag(flags),
       ...(setupDecision !== undefined ? { setupDecision } : {}),
+      claudeAccountId: getClaudeAccountFlag(flags),
       ...(target.runContext ? { runContext: target.runContext } : {}),
       ...(sourceContext !== undefined ? { sourceContext } : {}),
       repo: target.repo,
@@ -198,10 +200,10 @@ export const AUTOMATION_HANDLERS: Record<string, CommandHandler> = {
       missedRunGraceMinutes: getOptionalPositiveIntegerFlag(flags, 'missed-run-grace-minutes'),
       ...schedule
     } satisfies AutomationCreateParams
-    await assertAutomationFieldsSupported(client, create)
+    await assertAutomationFieldsSupported(client, create, 'create')
     const { writer, params } = await routeAutomationCreate(client, target, create)
     if (writer !== client) {
-      await assertAutomationFieldsSupported(writer, create)
+      await assertAutomationFieldsSupported(writer, create, 'create')
     }
     const result = await writer.call<{ automation: Automation }>('automation.create', params)
     printResult(result, json, formatAutomationShow)
@@ -220,6 +222,7 @@ export const AUTOMATION_HANDLERS: Record<string, CommandHandler> = {
       agentId: getOptionalProviderFlag(flags),
       extraAgentArgs: getExtraAgentArgsFlag(flags),
       ...(setupDecision !== undefined ? { setupDecision } : {}),
+      claudeAccountId: getClaudeAccountFlag(flags),
       ...(target.runContext ? { runContext: target.runContext } : {}),
       ...(sourceContext !== undefined ? { sourceContext } : {}),
       repo: target.repo,
@@ -232,7 +235,7 @@ export const AUTOMATION_HANDLERS: Record<string, CommandHandler> = {
       missedRunGraceMinutes: getOptionalPositiveIntegerFlag(flags, 'missed-run-grace-minutes'),
       ...schedule
     } satisfies AutomationUpdateParams
-    await assertAutomationFieldsSupported(client, updates)
+    await assertAutomationFieldsSupported(client, updates, 'update')
     const { owner: expectedOwner, automation: current } = await resolveAutomationMutationState(
       client,
       id

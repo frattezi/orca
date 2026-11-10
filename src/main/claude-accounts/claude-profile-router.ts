@@ -89,6 +89,10 @@ export class ClaudeProfileRouter {
         })
   }
 
+  get dataRoot(): string {
+    return this.args.dataRoot
+  }
+
   get userHome(): string {
     return this.args.userHome ?? homedir()
   }
@@ -103,6 +107,11 @@ export class ClaudeProfileRouter {
     return profile && !this.coveredBySystemDefault(profile.accountId) ? profile : null
   }
 
+  hasAccount(accountId: string): boolean {
+    return Boolean(findClaudeAccount(this.args.getSettings(), accountId))
+  }
+
+  /** The login an account's own folder holds; null until it signs in there. */
   accountLogin(accountId: string): ClaudeFolderLogin | null {
     return readClaudeFolderLogin(claudeStateFile(this.accountHome(accountId), this.userHome))
   }
@@ -181,15 +190,24 @@ export class ClaudeProfileRouter {
     // Login changes since publication can change the route.
     this.writePointer()
     const profile = this.routedProfile()
-    if (!profile) {
-      return this.preparation()
+    if (profile) {
+      await this.readyForLaunch(profile.accountId)
     }
-    await prepareClaudeProfileForLaunch(
-      profile,
+    return this.preparation()
+  }
+
+  /** Whether System default covers the account, once the login shell's CLAUDE_CONFIG_DIR is known. */
+  async coveredBySystemDefaultOnceEnvReady(accountId: string): Promise<boolean> {
+    await this.envReady
+    return this.coveredBySystemDefault(accountId)
+  }
+
+  readyForLaunch(accountId: string): Promise<void> {
+    return prepareClaudeProfileForLaunch(
+      this.describe(accountId),
       (value) => this.setUp(value),
       this.args.refreshWaitMs
     )
-    return this.preparation()
   }
 
   accountHome(accountId: string): string {
