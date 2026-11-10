@@ -23,9 +23,13 @@ const { fetchProviderAccountsSnapshot } = vi.hoisted(() => ({
     rateLimits: null
   }))
 }))
-vi.mock('@/runtime/provider-accounts/observations/runtime-provider-accounts-client', () => ({
-  fetchProviderAccountsSnapshot
-}))
+vi.mock(
+  '@/runtime/provider-accounts/observations/runtime-provider-accounts-client',
+  async (importOriginal) => ({
+    ...(await importOriginal<object>()),
+    fetchProviderAccountsSnapshot
+  })
+)
 
 function repo(overrides: Partial<Repo> = {}): Repo {
   return {

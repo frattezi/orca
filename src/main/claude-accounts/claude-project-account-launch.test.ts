@@ -142,6 +142,18 @@ describe("a project's Claude account", () => {
     await expect(claudeAuth).resolves.toMatchObject({ configDir: home('b') })
   })
 
+  it('leaves a re-adopted pane in the project as it was', () => {
+    installRouter()
+    const { claudeAuth } = resolveClaudeSpawnAuth({
+      env: { KEEP: '1' },
+      target: { runtime: 'host' },
+      isClaudeLaunch: false,
+      projectClaudeAccountId: 'b',
+      freshSpawn: false
+    })
+    expect(claudeAuth).toBeNull()
+  })
+
   it('follows the selection while the project account is signed out, so shells still open', () => {
     const { home } = installRouter()
     rmSync(join(home('b'), '.claude.json'))

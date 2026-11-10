@@ -95,7 +95,7 @@ describe('AutomationClaudeAccountField', () => {
 
   it('is disabled for an automation that runs on another host', async () => {
     renderField('', false)
-    expect(await screen.findByText('Selected account')).toBeTruthy()
+    expect(await screen.findByText('Project or selected account')).toBeTruthy()
     expect(screen.getByRole('combobox').hasAttribute('disabled')).toBe(true)
     expect(
       screen.getByText(

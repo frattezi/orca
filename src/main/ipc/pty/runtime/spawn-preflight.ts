@@ -108,7 +108,8 @@ export async function prepareRuntimePtySpawn(
     target: ctx.codexSelectionTarget,
     isClaudeLaunch: ctx.isClaudeLaunch,
     prepareClaudeAuth: ctx.deps.prepareClaudeAuth,
-    projectClaudeAccountId: projectClaudeAccountIdForWorktree(ctx.deps.store, args.worktreeId)
+    projectClaudeAccountId: projectClaudeAccountIdForWorktree(ctx.deps.store, args.worktreeId),
+    freshSpawn: !ctx.preAdoptedStablePane
   })
   args.env = claudeSpawn.env
   ctx.claudeAuth = claudeSpawn.claudeAuth ? await claudeSpawn.claudeAuth : null

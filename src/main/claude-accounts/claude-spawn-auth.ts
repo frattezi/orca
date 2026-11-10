@@ -37,22 +37,26 @@ export function resolveClaudeSpawnAuth<Env extends Record<string, string> | unde
   isClaudeLaunch: boolean
   prepareClaudeAuth?: PrepareClaudeAuth
   projectClaudeAccountId?: string
+  /** False for a re-adopted pane, which starts nothing that a project account could route. */
+  freshSpawn?: boolean
 }): {
   env: Env | Record<string, string>
   claudeAuth: Promise<ClaudeRuntimeAuthPreparation> | null
 } {
   const { [CLAUDE_PINNED_ACCOUNT_ENV]: pinnedAccountId, ...rest } = args.env ?? {}
-  const accountId = pinnedAccountId ?? projectAccountId(args)
+  // Why: a re-adopted pane starts no Claude, so its stale pin must neither prepare nor refuse.
+  const pin = args.isClaudeLaunch ? pinnedAccountId : undefined
+  // Why plain shells too: `claude` typed in the project's terminals should use its account.
+  const accountId = pin ?? (args.freshSpawn === false ? undefined : projectAccountId(args))
   if (accountId === undefined) {
     return {
-      env: withClaudeProfileTerminalEnv(args.env, args.target),
+      env: withClaudeProfileTerminalEnv(
+        pinnedAccountId === undefined ? args.env : rest,
+        args.target
+      ),
       claudeAuth:
         args.isClaudeLaunch && args.prepareClaudeAuth ? args.prepareClaudeAuth(args.target) : null
     }
-  }
-  // Why: a re-adopted pane starts no Claude, so its stale pin must neither prepare nor refuse.
-  if (!args.isClaudeLaunch) {
-    return { env: withClaudeProfileTerminalEnv(rest, args.target), claudeAuth: null }
   }
   // Why a refusal: only this host's router owns its account folders; elsewhere the run would
   // silently use another account.

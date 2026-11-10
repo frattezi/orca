@@ -16,18 +16,22 @@ type RepositoryClaudeAccountSectionProps = {
 // Why: Radix Select rejects an empty item value, so "follow the selection" needs a sentinel.
 const FOLLOW_SELECTION_VALUE = '__selected__'
 
-export function RepositoryClaudeAccountSection({
+export function RepositoryClaudeAccountSection(
+  props: RepositoryClaudeAccountSectionProps
+): React.JSX.Element | null {
+  // Why local only: launches pin this computer's account folders, which a remote host never sees.
+  return getRepoExecutionHostId(props.repo) === 'local' ? (
+    <LocalRepositoryClaudeAccountSection {...props} />
+  ) : null
+}
+
+function LocalRepositoryClaudeAccountSection({
   repo,
   updateRepo,
   forceVisible
-}: RepositoryClaudeAccountSectionProps): React.JSX.Element | null {
-  // Why local only: launches pin this computer's account folders, which a remote host never sees.
-  const runsOnThisComputer = getRepoExecutionHostId(repo) === 'local'
-  const accounts = useLocalClaudeAccounts(runsOnThisComputer)
+}: RepositoryClaudeAccountSectionProps): React.JSX.Element {
+  const accounts = useLocalClaudeAccounts()
   const selectLabelId = useId()
-  if (!runsOnThisComputer) {
-    return null
-  }
   const savedMissing =
     accounts !== null &&
     repo.claudeAccountId !== undefined &&
